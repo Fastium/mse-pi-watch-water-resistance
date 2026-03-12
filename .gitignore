@@ -1,5 +1,8 @@
+.DS_Store
 # Python-generated files
 __pycache__/
+.ipynb_checkpoints/
+*.pyc
 *.py[oc]
 build/
 dist/
