@@ -11,10 +11,10 @@ Ce script:
 5) exporte CSV + figures de controle.
 
 Usage standard (recommandé):
-    python notebooks/src/laser_matching_calibration.py
+    python src/laser_matching_calibration.py
 
 Option temperature (si besoin plus tard):
-    python notebooks/src/laser_matching_calibration.py --with-temperature
+    python src/laser_matching_calibration.py --with-temperature
 """
 
 import argparse
