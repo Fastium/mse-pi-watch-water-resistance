@@ -1,0 +1,2 @@
+n_scans,n_button_rows,n_summary_rows,best_shift_index_score,summary_validated_shift,summary_corr_absorbance,summary_pairs,final_method,final_shift_used,final_pairs,best_feature,best_corr_HA,best_corr_Abs,calibration_model,use_temperature
+579,575,579,-4,4,1.0,575,index_shift_from_summary(-4),-4,575,F_p95,0.9931418257564728,0.9914454014449129,HA ~ feature,False
