@@ -13,5 +13,10 @@ dependencies = [
 [tool.uv]
 package = true
 
+[tool.ruff]
+select = ["FIX002",
+    "E", "F"
+]
+
 [project.scripts]
 example-ad3 = "examples.example_ad3:main"
