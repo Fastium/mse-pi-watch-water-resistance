@@ -1,0 +1,2 @@
+file,file_path,scan_id,feature_name,feature_value,coef_intercept,coef_slope,HA_pred
+Mesures27062024_578.txt,data/raw/Mesures27062024/Mesures27062024_578.txt,578,F_p95,0.00665685073937194,-1.958381735209101,1669.5439269821916,9.155522989536232
