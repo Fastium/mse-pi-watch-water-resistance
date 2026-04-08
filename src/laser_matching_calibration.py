@@ -7,10 +7,10 @@ Ce script:
 1) lit les scans laser (.txt), construit I0(t), puis A(t),
 2) extrait des features robustes sur A(t),
 3) aligne scans et log bouton (index shift / temps / DTW),
-4) calibre HA_ref ~ feature (sans temperature par defaut),
+4) calibre (fit) HA_ref ~ feature (sans temperature par defaut (HA_pred = -1.9584 + 1669.5439 * F_p95)),
 5) exporte CSV + figures de controle.
 
-Usage standard (recommandé):
+Usage standard (recommandé car T n'apporte pas de gain significatif):
     python src/laser_matching_calibration.py
 
 Option temperature (si besoin plus tard):
