@@ -1,0 +1,7 @@
+# Core dependencies used by the calibration and prediction scripts.
+# The Excel file is parsed via the Python standard library, so openpyxl is not required.
+
+numpy>=1.24
+pandas>=2.0
+matplotlib>=3.7
+ipython>=8.0
