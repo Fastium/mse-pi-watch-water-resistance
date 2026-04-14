@@ -13,6 +13,7 @@ SCOPE_INDEX = 0
 WAVEGEN_INDEX = 0
 
 
+# This class provide an interface to setup the analog discovery device
 class AD3:
     def __init__(self):
         self.device = dwf.AnalogDiscovery3()
@@ -33,8 +34,8 @@ class AD3:
         self,
         function: str = "triangle",
         frequence: float = 50,
-        amplitude: float = 100e-3,
-        offset: float = -70e-3,
+        amplitude: float = 200e-3,
+        offset: float = -100e-3,
     ):
 
         if self.wavegen is None:
@@ -53,6 +54,8 @@ class AD3:
         range: float = 10,
         bandwidth: float = 1e3,
         coupling: str = "ac",
+        trigger: float = 1,
+        hysteresis: float = 0.01,
     ):
         if self.scope is None:
             raise RuntimeError("Scope not initialized")
@@ -66,8 +69,8 @@ class AD3:
                 mode="normal",
                 channel=SCOPE_INDEX,
                 slope="rising",
-                level=1,
-                hysteresis=0.1,
+                level=trigger,
+                hysteresis=hysteresis,
             )
 
     def start_wavegens(self):
@@ -86,35 +89,42 @@ class AD3:
 
         return np.array(self.scope[SCOPE_INDEX].get_data())
 
-    def setup_io(self):
+    def setup_io(self, A2: bool = True, A1: bool = True, A0: bool = True):
         if self.io is None:
             raise RuntimeError("IO not initialized")
         else:
-            self.io[0].setup(enabled=True, state=False)
-            self.io[1].setup(enabled=True, state=False)
-            self.io[2].setup(enabled=True, state=False)
+            self.io[0].setup(enabled=True, state=A0, configure=True)
+            self.io[1].setup(enabled=True, state=A1, configure=True)
+            self.io[2].setup(enabled=True, state=A2, configure=True)
 
 
 def main():
+
     ad3 = AD3()
     ad3.open()
+    ad3.setup_io(False, True, False)
     ad3.setup_wavegen()
-    ad3.setup_scope()
+    ad3.setup_scope(trigger=0.2, hysteresis=0.05)
+
     ad3.start_wavegens()
 
     plt.ion()
     fig, ax = plt.subplots()
 
-    for i in range(1000):
+    for i in range(10000):
         data = ad3.get_scope_data()
+        name = "glass_with_water_" + str(i) + ".txt"
+        # np.savetxt(name, data, fmt="%f")
+
         ax.clear()
         ax.plot(data)
-        ax.set_ylim(-3, 3)
+        # ax.set_ylim(-3, 3)
 
-        plt.show()
-        plt.pause(0.001)
+        plt.show() 
+        plt.pause(0.01)
 
     plt.ioff()
+    plt.show()
 
     ad3.close()
 
