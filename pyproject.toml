@@ -21,3 +21,4 @@ select = ["FIX002",
 
 [project.scripts]
 example-ad3 = "examples.example_ad3:main"
+example-ui = "examples.example_ui:main"
