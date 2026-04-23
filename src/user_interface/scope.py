@@ -38,17 +38,6 @@ class Scope(QGroupBox):
         self.graph.showGrid(x=True, y=True, alpha=0.3)
         self.curve = self.graph.plot(pen="y")
 
-        # Setup sliders for X and Y axes
-        self.x_slider = QSlider(Qt.Orientation.Horizontal)
-        self.x_slider.setRange(1, 10)
-        self.x_slider.setValue(100)
-        self.x_slider.valueChanged.connect(self._update_x_range)
-
-        self.y_slider = QSlider(Qt.Orientation.Vertical)
-        self.y_slider.setRange(1, 1000)
-        self.y_slider.setValue(5)
-        self.y_slider.valueChanged.connect(self._update_y_range)
-
         # Setup layouts
         main_layout = QVBoxLayout()
 
@@ -60,22 +49,12 @@ class Scope(QGroupBox):
         # Middle layout for the graph and Y-slider
         mid_layout = QHBoxLayout()
         mid_layout.addWidget(self.graph)
-        mid_layout.addWidget(self.y_slider)
-
-        # Bottom layout for the X-slider
-        bottom_layout = QHBoxLayout()
-        bottom_layout.addWidget(self.x_slider)
 
         # Assemble the main layout
         main_layout.addLayout(top_layout)
         main_layout.addLayout(mid_layout)
-        main_layout.addLayout(bottom_layout)
 
         self.setLayout(main_layout)
-
-        # Initialize axes ranges
-        self._update_x_range(self.x_slider.value())
-        self._update_y_range(self.y_slider.value())
 
     def _on_toggle(self, checked: bool):
         """Handle button toggle state to start/stop the scope."""
