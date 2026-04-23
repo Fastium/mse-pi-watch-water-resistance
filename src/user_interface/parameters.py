@@ -16,8 +16,8 @@ class ParametersPanel(QWidget):
     def __init__(
         self,
         # Scope callbacks
-        set_range_cb: Callable[[str], None],
-        set_bandwidth_cb: Callable[[str], None],
+        set_range_cb: Callable[[float], None],
+        set_bandwidth_cb: Callable[[float], None],
         set_coupling_cb: Callable[[str], None],
         set_trigger_cb: Callable[[float], None],
         set_trigger_hysteresis_cb: Callable[[float], None],
@@ -40,32 +40,34 @@ class ParametersPanel(QWidget):
         scope_group = QGroupBox("Scope Parameters")
         scope_layout = QFormLayout()
 
-        self.range_combo = QComboBox()
-        self.range_combo.addItems(["10 mV", "100 mV", "1 V", "5 V", "10 V"])
-        self.range_combo.currentTextChanged.connect(set_range_cb)
-        scope_layout.addRow("Range:", self.range_combo)
+        self.range_spin = QDoubleSpinBox()
+        self.range_spin.setRange(0.0, 10.0)
+        self.range_spin.setSingleStep(0.1)
+        self.range_spin.valueChanged.connect(set_trigger_hysteresis_cb)
+        scope_layout.addRow("Range:", self.range_spin)
 
-        self.bandwidth_combo = QComboBox()
-        self.bandwidth_combo.addItems(["Full", "20 MHz"])
-        self.bandwidth_combo.currentTextChanged.connect(set_bandwidth_cb)
-        scope_layout.addRow("Bandwidth:", self.bandwidth_combo)
+        self.bandwidth_spin = QDoubleSpinBox()
+        self.bandwidth_spin.setRange(0.0, 100e6)
+        self.bandwidth_spin.setSingleStep(100e3)
+        self.bandwidth_spin.valueChanged.connect(set_bandwidth_cb)
+        scope_layout.addRow("Bandwidth:", self.bandwidth_spin)
 
         self.coupling_combo = QComboBox()
-        self.coupling_combo.addItems(["DC", "AC"])
+        self.coupling_combo.addItems(["dc", "ac"])
         self.coupling_combo.currentTextChanged.connect(set_coupling_cb)
         scope_layout.addRow("Coupling:", self.coupling_combo)
 
         self.trigger_spin = QDoubleSpinBox()
-        self.trigger_spin.setRange(-20.0, 20.0)
+        self.trigger_spin.setRange(-10.0, 10)
         self.trigger_spin.setSingleStep(0.1)
         self.trigger_spin.valueChanged.connect(set_trigger_cb)
-        scope_layout.addRow("Trig Level (V):", self.trigger_spin)
+        scope_layout.addRow("Trigger Level (V):", self.trigger_spin)
 
         self.hysteresis_spin = QDoubleSpinBox()
         self.hysteresis_spin.setRange(0.0, 5.0)
         self.hysteresis_spin.setSingleStep(0.1)
         self.hysteresis_spin.valueChanged.connect(set_trigger_hysteresis_cb)
-        scope_layout.addRow("Trig Hysteresis (V):", self.hysteresis_spin)
+        scope_layout.addRow("Trigger Hysteresis (V):", self.hysteresis_spin)
 
         self.sample_rate_spin = QDoubleSpinBox()
         self.sample_rate_spin.setRange(1.0, 100e6)
@@ -142,3 +144,49 @@ class ParametersPanel(QWidget):
 
         layout.addStretch()
         self.setLayout(layout)
+
+        # --- Scope GUI Setters ---
+
+    def set_scope_range(self, val: float):
+        self.range_spin.setValue(val)
+
+    def set_scope_bandwidth(self, val: float):
+        self.bandwidth_spin.setValue(val)
+
+    def set_scope_coupling(self, val: str):
+        self.coupling_combo.setCurrentText(val)
+
+    def set_scope_trigger(self, val: float):
+        self.trigger_spin.setValue(val)
+
+    def set_scope_hysteresis(self, val: float):
+        self.hysteresis_spin.setValue(val)
+
+    def set_scope_sample_rate(self, val: float):
+        self.sample_rate_spin.setValue(val)
+
+    def set_scope_buffer_size(self, val: int):
+        self.buffer_size_spin.setValue(val)
+
+    # --- Wavegen GUI Setters ---
+    def set_wavegen_function(self, val: str):
+        self.function_combo.setCurrentText(val)
+
+    def set_wavegen_frequency(self, val: float):
+        self.frequency_spin.setValue(val)
+
+    def set_wavegen_amplitude(self, val: float):
+        self.amplitude_spin.setValue(val)
+
+    def set_wavegen_offset(self, val: float):
+        self.offset_spin.setValue(val)
+
+    # --- Gain GUI Setters ---
+    def set_gain_a0(self, val: bool):
+        self.gain_a0_check.setChecked(val)
+
+    def set_gain_a1(self, val: bool):
+        self.gain_a1_check.setChecked(val)
+
+    def set_gain_a2(self, val: bool):
+        self.gain_a2_check.setChecked(val)

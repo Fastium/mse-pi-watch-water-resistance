@@ -174,8 +174,8 @@ def main():
 
     for i in range(10):
         data = ad3.get_scope_data()
-        name = "glass_witout_water_" + str(i) + ".txt"
-        np.savetxt(name, data, fmt="%f")
+        # name = "glass_witout_water_" + str(i) + ".txt"
+        # np.savetxt(name, data, fmt="%f")
 
         ax.clear()
         ax.plot(data)
