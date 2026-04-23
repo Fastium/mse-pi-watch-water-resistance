@@ -73,3 +73,48 @@ class Window(QMainWindow):
 
     def set_data(self, x_data: np.ndarray, y_data: np.ndarray):
         self.scope.set_data(x_data, y_data)
+
+    # --- Scope GUI Setters ---
+    def set_scope_range(self, val: float):
+        self.parameters.set_scope_range(val)
+
+    def set_scope_bandwidth(self, val: float):
+        self.parameters.set_scope_bandwidth(val)
+
+    def set_scope_coupling(self, val: str):
+        self.parameters.set_scope_coupling(val)
+
+    def set_scope_trigger(self, val: float):
+        self.parameters.set_scope_trigger(val)
+
+    def set_scope_hysteresis(self, val: float):
+        self.parameters.set_scope_hysteresis(val)
+
+    def set_scope_sample_rate(self, val: float):
+        self.parameters.set_scope_sample_rate(val)
+
+    def set_scope_buffer_size(self, val: int):
+        self.parameters.set_scope_buffer_size(val)
+
+    # --- Wavegen GUI Setters ---
+    def set_wavegen_function(self, val: str):
+        self.parameters.set_wavegen_function(val)
+
+    def set_wavegen_frequency(self, val: float):
+        self.parameters.set_wavegen_frequency(val)
+
+    def set_wavegen_amplitude(self, val: float):
+        self.parameters.set_wavegen_amplitude(val)
+
+    def set_wavegen_offset(self, val: float):
+        self.parameters.set_wavegen_offset(val)
+
+    # --- Gain GUI Setters ---
+    def set_gain_a0(self, val: bool):
+        self.parameters.set_gain_a0(val)
+
+    def set_gain_a1(self, val: bool):
+        self.parameters.set_gain_a1(val)
+
+    def set_gain_a2(self, val: bool):
+        self.parameters.set_gain_a2(val)

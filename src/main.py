@@ -8,6 +8,23 @@ from PySide6.QtWidgets import QApplication
 from middleware.controller import Controller
 from user_interface.window import Window
 
+DEFAULT_SCOPE_RANGE_STR = 2
+DEFAULT_SCOPE_BANDWIDTH_STR = 300e3
+DEFAULT_SCOPE_COUPLING_STR = "ac"
+DEFAULT_SCOPE_TRIGGER = 1.0
+DEFAULT_SCOPE_HYSTERESIS = 0.1
+DEFAULT_SCOPE_SAMPLE_RATE = 300e3
+DEFAULT_SCOPE_BUFFER_SIZE = 8192
+
+DEFAULT_WAVEGEN_FUNCTION = "triangle"
+DEFAULT_WAVEGEN_FREQUENCY = 50.0
+DEFAULT_WAVEGEN_AMPLITUDE = 1.5
+DEFAULT_WAVEGEN_OFFSET = 0
+
+DEFAULT_GAIN_A0 = False
+DEFAULT_GAIN_A1 = False
+DEFAULT_GAIN_A2 = False
+
 
 class AcquisitionWorker(QObject):
     # Signal émis quand les données sont prêtes. Transmet les tableaux X et Y.
@@ -36,6 +53,43 @@ class AcquisitionWorker(QObject):
             # Petite pause pour éviter de monopoliser le CPU à 100%
             # si get_scope_data n'est pas bloquant
             time.sleep(0.01)
+
+
+def setup_default(c: Controller, w: Window):
+    c.set_scope_range(DEFAULT_SCOPE_RANGE_STR)  # Correspond à "10 V"
+    c.set_scope_bandwidth(DEFAULT_SCOPE_BANDWIDTH_STR)  # Correspond à "Full"
+    c.set_scope_coupling(DEFAULT_SCOPE_COUPLING_STR)
+    c.set_scope_trigger(DEFAULT_SCOPE_TRIGGER)
+    c.set_scope_hysteresis(DEFAULT_SCOPE_HYSTERESIS)
+    c.set_scope_sample_rate(DEFAULT_SCOPE_SAMPLE_RATE)
+    c.set_scope_buffer_size(DEFAULT_SCOPE_BUFFER_SIZE)
+
+    c.set_wavegen_function(DEFAULT_WAVEGEN_FUNCTION)
+    c.set_wavegen_frequency(DEFAULT_WAVEGEN_FREQUENCY)
+    c.set_wavegen_amplitude(DEFAULT_WAVEGEN_AMPLITUDE)
+    c.set_wavegen_offset(DEFAULT_WAVEGEN_OFFSET)
+
+    c.set_gain_a0(DEFAULT_GAIN_A0)
+    c.set_gain_a1(DEFAULT_GAIN_A1)
+    c.set_gain_a2(DEFAULT_GAIN_A2)
+
+    # 2. Configuration de l'Interface Graphique (UI)
+    w.set_scope_range(DEFAULT_SCOPE_RANGE_STR)
+    w.set_scope_bandwidth(DEFAULT_SCOPE_BANDWIDTH_STR)
+    w.set_scope_coupling(DEFAULT_SCOPE_COUPLING_STR)
+    w.set_scope_trigger(DEFAULT_SCOPE_TRIGGER)
+    w.set_scope_hysteresis(DEFAULT_SCOPE_HYSTERESIS)
+    w.set_scope_sample_rate(DEFAULT_SCOPE_SAMPLE_RATE)
+    w.set_scope_buffer_size(DEFAULT_SCOPE_BUFFER_SIZE)
+
+    w.set_wavegen_function(DEFAULT_WAVEGEN_FUNCTION)
+    w.set_wavegen_frequency(DEFAULT_WAVEGEN_FREQUENCY)
+    w.set_wavegen_amplitude(DEFAULT_WAVEGEN_AMPLITUDE)
+    w.set_wavegen_offset(DEFAULT_WAVEGEN_OFFSET)
+
+    w.set_gain_a0(DEFAULT_GAIN_A0)
+    w.set_gain_a1(DEFAULT_GAIN_A1)
+    w.set_gain_a2(DEFAULT_GAIN_A2)
 
 
 def main():
@@ -89,6 +143,8 @@ def main():
         set_gain_a1=controller.set_gain_a1,
         set_gain_a2=controller.set_gain_a2,
     )
+
+    setup_default(controller, window)
 
     # Connexion du signal de données du worker à l'affichage de la fenêtre
     worker.data_ready.connect(window.set_data)
