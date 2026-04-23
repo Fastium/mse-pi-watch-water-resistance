@@ -5,6 +5,7 @@ import pyqtgraph as pg
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
+    QLineEdit,
     QPushButton,
     QVBoxLayout,
 )
@@ -15,6 +16,7 @@ class Scope(QGroupBox):
         self,
         start: Callable[[], None],
         stop: Callable[[], None],
+        single_start: Callable[[], None],
         export: Callable[[np.ndarray, str], None],
     ):
         super().__init__()
@@ -30,6 +32,11 @@ class Scope(QGroupBox):
         else:
             raise ValueError("stop must be a callable")
 
+        if single_start is not None:
+            self.single_start_callback = single_start
+        else:
+            raise ValueError("single_start must be a callable")
+
         if export is not None:
             self.export_callback = export
         else:
@@ -40,10 +47,18 @@ class Scope(QGroupBox):
         self.toggle_btn.setCheckable(True)
         self.toggle_btn.toggled.connect(self._on_toggle)
 
+        # setup single start button
+        self.single_start_btn = QPushButton("Single Start")
+        self.single_start_btn.clicked.connect(self._on_single_start)
+
         # export button
         self.export_btn = QPushButton("Export as txt")
         self.export_btn.setText("Export as txt")
         self.export_btn.clicked.connect(self._on_export)
+
+        # export filename
+        self.export_filename = QLineEdit()
+        self.export_filename.setText("measure-")
 
         # Setup scope graph (center)
         self.graph = pg.PlotWidget(title="Scope")
@@ -56,7 +71,9 @@ class Scope(QGroupBox):
         # Top layout for the button (aligned left)
         top_layout = QHBoxLayout()
         top_layout.addWidget(self.toggle_btn)
+        top_layout.addWidget(self.single_start_btn)
         top_layout.addWidget(self.export_btn)
+        top_layout.addWidget(self.export_filename)
         top_layout.addStretch()
 
         # Middle layout for the graph and Y-slider
@@ -74,26 +91,29 @@ class Scope(QGroupBox):
         if checked:
             self.toggle_btn.setText("Stop")
             self.start_callback()
+            # disable single start
+            self.single_start_btn.setEnabled(False)
         else:
             self.toggle_btn.setText("Start")
             self.stop_callback()
+            # enable single start
+            self.single_start_btn.setEnabled(True)
 
     def _on_export(self):
         print("Export :")
-        x_data, y_data = self.curve.getData()
+        y_data = self.curve.getData()
+        name = self.export_filename.text() + ".txt"
 
         if y_data is not None:
-            self.export_callback(y_data, "data exported")
+            self.export_callback(np.array(y_data), name)
         else:
             print("No data to export yet.")
 
-    def _update_x_range(self, value: int):
-        """Update the X-axis range based on the slider value."""
-        self.graph.setXRange(0, value)
-
-    def _update_y_range(self, value: int):
-        """Update the Y-axis range based on the slider value."""
-        self.graph.setYRange(-value, value)
+    def _on_single_start(self):
+        if self.single_start_callback is not None:
+            self.single_start_callback()
+        else:
+            print("No single start callback set.")
 
     def set_data(self, x_data: np.ndarray, y_data: np.ndarray):
         """Update the displayed values on the scope."""

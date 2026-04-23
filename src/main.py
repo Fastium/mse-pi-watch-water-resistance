@@ -55,6 +55,11 @@ class AcquisitionWorker(QObject):
             # si get_scope_data n'est pas bloquant
             time.sleep(0.01)
 
+    def single_run(self):
+        data = self.controller.get_scope_data()
+        x_data = np.arange(len(data))
+        self.data_ready.emit(x_data, data)
+
 
 def setup_default(c: Controller, w: Window):
     c.set_scope_range(DEFAULT_SCOPE_RANGE_STR)  # Correspond à "10 V"
@@ -105,11 +110,9 @@ def main():
     thread = QThread()
     worker.moveToThread(thread)
 
-    # Le thread exécute la fonction 'run' du worker quand il démarre
-    thread.started.connect(worker.run)
-
     # Fonctions encapsulées pour démarrer le hardware ET le thread
     def start_acquisition():
+        thread.started.connect(worker.run)
         controller.start()
         worker.start_working()
         if not thread.isRunning():
@@ -117,8 +120,18 @@ def main():
 
     def stop_acquisition():
         worker.stop_working()
-        # On attend poliment que le thread finisse sa boucle en cours
-        # (Attention : si get_scope_data est bloqué indéfiniment, quit/wait peut bloquer ici aussi)
+        thread.quit()
+        thread.wait(100)  # Attente max de 100ms
+        controller.stop()
+
+    def single_aquisition():
+        thread.started.connect(worker.single_run)
+        controller.start()
+        worker.start_working()
+        if not thread.isRunning():
+            thread.start()
+
+        worker.stop_working()
         thread.quit()
         thread.wait(100)  # Attente max de 100ms
         controller.stop()
@@ -126,6 +139,7 @@ def main():
     window = Window(
         start_scope=start_acquisition,
         stop_scope=stop_acquisition,
+        single_start_scope=single_aquisition,
         export_scope=export_txt,
         # Scope parameters
         set_range=controller.set_scope_range,

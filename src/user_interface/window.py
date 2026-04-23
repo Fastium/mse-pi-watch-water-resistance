@@ -16,6 +16,7 @@ class Window(QMainWindow):
         self,
         start_scope: Callable[[], None],
         stop_scope: Callable[[], None],
+        single_start_scope: Callable[[], None],
         export_scope: Callable[[np.ndarray, str], None],
         # Scope
         set_range: Callable[[float], None],
@@ -45,7 +46,12 @@ class Window(QMainWindow):
         main_layout = QHBoxLayout()  # Horizontal
 
         # Instantiate and add the Scope widget
-        self.scope = Scope(start=start_scope, stop=stop_scope, export=export_scope)
+        self.scope = Scope(
+            start=start_scope,
+            stop=stop_scope,
+            export=export_scope,
+            single_start=single_start_scope,
+        )
         main_layout.addWidget(self.scope, stretch=3)
 
         # Instantiate and add the Parameters panel on the right

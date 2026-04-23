@@ -84,13 +84,13 @@ class AD3:
         if self.wavegen is None:
             raise RuntimeError("Wavegen or scope not initialized")
         else:
-            self.wavegen[WAVEGEN_INDEX].setup(start=True)
+            self.wavegen[WAVEGEN_INDEX].setup(start=True, configure=True)
 
     def stop_wavegen(self):
         if self.wavegen is None:
             raise RuntimeError("Wavegen or scope not initialized")
         else:
-            self.wavegen[WAVEGEN_INDEX].setup(start=False)
+            self.wavegen[WAVEGEN_INDEX].setup(start=False, configure=True)
 
     def get_scope_data(self) -> np.ndarray:
         if self.scope is None:
