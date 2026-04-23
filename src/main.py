@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QApplication
 
 from middleware.controller import Controller
 from user_interface.window import Window
+from utils.file_utils import export_txt
 
 DEFAULT_SCOPE_RANGE_STR = 2
 DEFAULT_SCOPE_BANDWIDTH_STR = 300e3
@@ -125,6 +126,7 @@ def main():
     window = Window(
         start_scope=start_acquisition,
         stop_scope=stop_acquisition,
+        export_scope=export_txt,
         # Scope parameters
         set_range=controller.set_scope_range,
         set_bandwidth=controller.set_scope_bandwidth,

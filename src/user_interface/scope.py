@@ -11,7 +11,12 @@ from PySide6.QtWidgets import (
 
 
 class Scope(QGroupBox):
-    def __init__(self, start: Callable[[], None], stop: Callable[[], None]):
+    def __init__(
+        self,
+        start: Callable[[], None],
+        stop: Callable[[], None],
+        export: Callable[[np.ndarray, str], None],
+    ):
         super().__init__()
 
         # Setup callbacks for the toggle button
@@ -25,10 +30,20 @@ class Scope(QGroupBox):
         else:
             raise ValueError("stop must be a callable")
 
+        if export is not None:
+            self.export_callback = export
+        else:
+            raise ValueError("export must be a callable")
+
         # Setup the toggle button (top-left)
         self.toggle_btn = QPushButton("Start")
         self.toggle_btn.setCheckable(True)
         self.toggle_btn.toggled.connect(self._on_toggle)
+
+        # export button
+        self.export_btn = QPushButton("Export as txt")
+        self.export_btn.setText("Export as txt")
+        self.export_btn.clicked.connect(self._on_export)
 
         # Setup scope graph (center)
         self.graph = pg.PlotWidget(title="Scope")
@@ -41,6 +56,7 @@ class Scope(QGroupBox):
         # Top layout for the button (aligned left)
         top_layout = QHBoxLayout()
         top_layout.addWidget(self.toggle_btn)
+        top_layout.addWidget(self.export_btn)
         top_layout.addStretch()
 
         # Middle layout for the graph and Y-slider
@@ -56,11 +72,20 @@ class Scope(QGroupBox):
     def _on_toggle(self, checked: bool):
         """Handle button toggle state to start/stop the scope."""
         if checked:
-            self.toggle_btn.setText("Disable")
+            self.toggle_btn.setText("Stop")
             self.start_callback()
         else:
-            self.toggle_btn.setText("Enable")
+            self.toggle_btn.setText("Start")
             self.stop_callback()
+
+    def _on_export(self):
+        print("Export :")
+        x_data, y_data = self.curve.getData()
+
+        if y_data is not None:
+            self.export_callback(y_data, "data exported")
+        else:
+            print("No data to export yet.")
 
     def _update_x_range(self, value: int):
         """Update the X-axis range based on the slider value."""

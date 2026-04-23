@@ -16,6 +16,7 @@ class Window(QMainWindow):
         self,
         start_scope: Callable[[], None],
         stop_scope: Callable[[], None],
+        export_scope: Callable[[np.ndarray, str], None],
         # Scope
         set_range: Callable[[float], None],
         set_bandwidth: Callable[[float], None],
@@ -36,15 +37,15 @@ class Window(QMainWindow):
     ):
         super().__init__()
 
-        self.setWindowTitle("Oscilloscope Application")
-        self.resize(1000, 600)  # On agrandit un peu la fenêtre pour la place du panel
+        self.setWindowTitle("Scope Application")
+        self.resize(1000, 600)
 
         # Setup main widget and layout
         central_widget = QWidget()
         main_layout = QHBoxLayout()  # Horizontal
 
-        # Instantiate and add the Scope widget (on lui donne un poids stretch plus grand)
-        self.scope = Scope(start=start_scope, stop=stop_scope)
+        # Instantiate and add the Scope widget
+        self.scope = Scope(start=start_scope, stop=stop_scope, export=export_scope)
         main_layout.addWidget(self.scope, stretch=3)
 
         # Instantiate and add the Parameters panel on the right
