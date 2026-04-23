@@ -1,8 +1,6 @@
-import sys
 from typing import Callable
 
 import numpy as np
-import pyqtgraph as pg
 from PySide6.QtWidgets import (
     QHBoxLayout,  # Remplacement par un layout horizontal
     QMainWindow,

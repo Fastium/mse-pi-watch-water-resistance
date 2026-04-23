@@ -85,8 +85,6 @@ class MockAD3:
             if self.wavegen_running:
                 sig_max = self.wavegen_offset + self.wavegen_amplitude
                 sig_min = self.wavegen_offset - self.wavegen_amplitude
-                print("Signal min: " + str(sig_min))
-                print("Signal max: " + str(sig_max))
                 if sig_min <= self.scope_trigger <= sig_max:
                     is_triggered = True
             else:

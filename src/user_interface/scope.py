@@ -1,14 +1,11 @@
-import sys
 from typing import Callable
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QPushButton,
-    QSlider,
     QVBoxLayout,
 )
 
