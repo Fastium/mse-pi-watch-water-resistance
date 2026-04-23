@@ -85,11 +85,13 @@ class MockAD3:
             if self.wavegen_running:
                 sig_max = self.wavegen_offset + self.wavegen_amplitude
                 sig_min = self.wavegen_offset - self.wavegen_amplitude
+                print("Signal min: " + str(sig_min))
+                print("Signal max: " + str(sig_max))
                 if sig_min <= self.scope_trigger <= sig_max:
                     is_triggered = True
             else:
                 # S'il n'y a que du bruit, le trigger doit être très proche de 0
-                noise_amp = self.scope_range * 0.02
+                noise_amp = self.scope_range * 0.002
                 if -noise_amp <= self.scope_trigger <= noise_amp:
                     is_triggered = True
 
@@ -125,7 +127,7 @@ class MockAD3:
             signal = np.zeros(self.scope_buffer_size)
 
         # Add random noise scaled to 2% of the scope range
-        noise = np.random.normal(0, self.scope_range * 0.02, self.scope_buffer_size)
+        noise = np.random.normal(0, self.scope_range, self.scope_buffer_size) * 0.02
 
         # Combine and clip the data to the scope limits (-range to +range)
         data = np.clip(signal + noise, -self.scope_range, self.scope_range)

@@ -1,11 +1,41 @@
 import sys
+import time
 
 import numpy as np
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QObject, QThread, Signal
 from PySide6.QtWidgets import QApplication
 
 from middleware.controller import Controller
 from user_interface.window import Window
+
+
+class AcquisitionWorker(QObject):
+    # Signal émis quand les données sont prêtes. Transmet les tableaux X et Y.
+    data_ready = Signal(np.ndarray, np.ndarray)
+
+    def __init__(self, controller):
+        super().__init__()
+        self.controller = controller
+        self._is_running = False
+
+    def start_working(self):
+        self._is_running = True
+
+    def stop_working(self):
+        self._is_running = False
+
+    def run(self):
+        while self._is_running:
+            try:
+                data = self.controller.get_scope_data()
+                x_data = np.arange(len(data))
+                self.data_ready.emit(x_data, data)
+            except RuntimeError:
+                pass  # Ignore si l'appareil n'est pas encore prêt
+
+            # Petite pause pour éviter de monopoliser le CPU à 100%
+            # si get_scope_data n'est pas bloquant
+            time.sleep(0.01)
 
 
 def main():
@@ -14,26 +44,28 @@ def main():
     controller = Controller()
     controller.connect()
     controller.setup()
-    # Création du timer pour mettre à jour l'affichage
-    update_timer = QTimer()
 
-    def update_data():
-        try:
-            data = controller.get_scope_data()
-            x_data = np.arange(len(data))
-            window.set_data(x_data, data)
-        except RuntimeError:
-            pass  # Ignore si l'appareil n'est pas encore prêt
+    # Mise en place du Worker et du Thread
+    worker = AcquisitionWorker(controller)
+    thread = QThread()
+    worker.moveToThread(thread)
 
-    update_timer.timeout.connect(update_data)
+    # Le thread exécute la fonction 'run' du worker quand il démarre
+    thread.started.connect(worker.run)
 
-    # Fonctions encapsulées pour démarrer le hardware ET le rafraîchissement
+    # Fonctions encapsulées pour démarrer le hardware ET le thread
     def start_acquisition():
         controller.start()
-        update_timer.start(50)  # Rafraîchissement toutes les 50ms (20 FPS)
+        worker.start_working()
+        if not thread.isRunning():
+            thread.start()
 
     def stop_acquisition():
-        update_timer.stop()
+        worker.stop_working()
+        # On attend poliment que le thread finisse sa boucle en cours
+        # (Attention : si get_scope_data est bloqué indéfiniment, quit/wait peut bloquer ici aussi)
+        thread.quit()
+        thread.wait(100)  # Attente max de 100ms
         controller.stop()
 
     window = Window(
@@ -58,17 +90,14 @@ def main():
         set_gain_a2=controller.set_gain_a2,
     )
 
-    data = controller.get_scope_data()
-    x_data = np.arange(len(data))
-    window.set_data(x_data, data)
+    # Connexion du signal de données du worker à l'affichage de la fenêtre
+    worker.data_ready.connect(window.set_data)
 
     window.show()
 
     # Disconnect the controller when the application is closed
-    app.aboutToQuit.connect(controller.disconnect)
-
     def on_quit():
-        update_timer.stop()
+        stop_acquisition()
         controller.disconnect()
 
     app.aboutToQuit.connect(on_quit)
