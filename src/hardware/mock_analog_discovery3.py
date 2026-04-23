@@ -73,8 +73,35 @@ class MockAD3:
             print("[MockAD3] Wavegen STOPPED -> Device not opened")
 
     def get_scope_data(self) -> np.ndarray:
+        import time
+
         if not self.is_open:
             raise RuntimeError("Device not opened")
+
+        # --- SIMULATION DU TRIGGER ---
+        # On vérifie si le niveau de trigger demandé est dans les bornes de notre signal
+        while True:
+            is_triggered = False
+            if self.wavegen_running:
+                sig_max = self.wavegen_offset + self.wavegen_amplitude
+                sig_min = self.wavegen_offset - self.wavegen_amplitude
+                if sig_min <= self.scope_trigger <= sig_max:
+                    is_triggered = True
+            else:
+                # S'il n'y a que du bruit, le trigger doit être très proche de 0
+                noise_amp = self.scope_range * 0.02
+                if -noise_amp <= self.scope_trigger <= noise_amp:
+                    is_triggered = True
+
+            if is_triggered:
+                break  # Le trigger est bon, on sort de l'attente
+
+            print(
+                f"[MockAD3] Waiting for trigger at {self.scope_trigger}V... (Signal out of bounds)"
+            )
+            time.sleep(
+                1.0
+            )  # Bloque le thread courant pendant 1 seconde avant de réessayer
 
         # Calculate time array for the buffer
         t_array = np.linspace(
