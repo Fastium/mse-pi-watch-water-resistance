@@ -9,10 +9,11 @@ from middleware.controller import Controller
 from user_interface.window import Window
 from utils.file_utils import export_txt
 
+# Default parameters for the straight laser test setup
 DEFAULT_SCOPE_RANGE_STR = 2
 DEFAULT_SCOPE_BANDWIDTH_STR = 300e3
 DEFAULT_SCOPE_COUPLING_STR = "ac"
-DEFAULT_SCOPE_TRIGGER = 1.0
+DEFAULT_SCOPE_TRIGGER = 0.4
 DEFAULT_SCOPE_HYSTERESIS = 0.1
 DEFAULT_SCOPE_SAMPLE_RATE = 300e3
 DEFAULT_SCOPE_BUFFER_SIZE = 8192
@@ -23,7 +24,7 @@ DEFAULT_WAVEGEN_AMPLITUDE = 1.5
 DEFAULT_WAVEGEN_OFFSET = 0
 
 DEFAULT_GAIN_A0 = False
-DEFAULT_GAIN_A1 = False
+DEFAULT_GAIN_A1 = True
 DEFAULT_GAIN_A2 = False
 
 
