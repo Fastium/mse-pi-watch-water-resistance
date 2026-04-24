@@ -3,6 +3,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+from application.config import AppConfig
+
 os.environ["ADEPT_RT_LOGDETAIL"] = "0"
 os.environ["ADEPT_RT_LOGFILE"] = os.devnull
 import dwfpy as dwf
@@ -20,21 +22,28 @@ class AD3:
         self.scope = None
         self.io = None
 
-        # scope
-        self.scope_range = 10
-        self.scope_bandwidth = 1e3
-        self.scope_coupling = "ac"
-        self.scope_trigger = 1
-        self.scope_hysteresis = 0.01
+        config = AppConfig()
 
-        self.scope_sample_rate = 300e3
-        self.scope_buffer_size = 8192
+        # scope
+        self.scope_range = config.scope_range
+        self.scope_bandwidth = config.scope_bandwidth
+        self.scope_coupling = config.scope_coupling
+        self.scope_trigger = config.scope_trigger
+        self.scope_hysteresis = config.scope_hysteresis
+
+        self.scope_sample_rate = config.scope_sample_rate
+        self.scope_buffer_size = config.scope_buffer_size
 
         # wavegen
-        self.wavegen_function = "triangle"
-        self.wavegen_frequency = 50
-        self.wavegen_amplitude = 200e-3
-        self.wavegen_offset = -100e-3
+        self.wavegen_function = config.wavegen_function
+        self.wavegen_frequency = config.wavegen_frequency
+        self.wavegen_amplitude = config.wavegen_amplitude
+        self.wavegen_offset = config.wavegen_offset
+
+        # gain
+        self.gain_a0 = config.gain_a0
+        self.gain_a1 = config.gain_a1
+        self.gain_a2 = config.gain_a2
 
         # gain
         self.gain_a0 = False

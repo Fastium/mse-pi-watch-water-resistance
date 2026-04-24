@@ -1,43 +1,40 @@
-from typing import Callable
-
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
     QFormLayout,
     QGroupBox,
-    QHBoxLayout,
-    QPushButton,
     QSpinBox,
     QVBoxLayout,
     QWidget,
 )
 
+from application.config import AppConfig  # N'oublie pas de créer ce fichier !
+
 
 class ParametersPanel(QWidget):
-    def __init__(
-        self,
-        # Scope callbacks
-        set_range_cb: Callable[[float], None],
-        set_bandwidth_cb: Callable[[float], None],
-        set_coupling_cb: Callable[[str], None],
-        set_trigger_cb: Callable[[float], None],
-        set_trigger_hysteresis_cb: Callable[[float], None],
-        set_sample_rate_cb: Callable[[float], None],
-        set_buffer_size_cb: Callable[[int], None],
-        # Wavegen callbacks
-        set_wavegen_function_cb: Callable[[str], None],
-        set_wavegen_frequency_cb: Callable[[float], None],
-        set_wavegen_amplitude_cb: Callable[[float], None],
-        set_wavegen_offset_cb: Callable[[float], None],
-        # Gain callbacks
-        set_gain_a0_cb: Callable[[bool], None],
-        set_gain_a1_cb: Callable[[bool], None],
-        set_gain_a2_cb: Callable[[bool], None],
-    ):
+    # --- Déclaration des Signaux ---
+    range_changed = Signal(float)
+    bandwidth_changed = Signal(float)
+    coupling_changed = Signal(str)
+    trigger_changed = Signal(float)
+    trigger_hysteresis_changed = Signal(float)
+    sample_rate_changed = Signal(float)
+    buffer_size_changed = Signal(int)
+
+    wavegen_function_changed = Signal(str)
+    wavegen_frequency_changed = Signal(float)
+    wavegen_amplitude_changed = Signal(float)
+    wavegen_offset_changed = Signal(float)
+
+    gain_a0_changed = Signal(bool)
+    gain_a1_changed = Signal(bool)
+    gain_a2_changed = Signal(bool)
+
+    def __init__(self):
         super().__init__()
 
-        # Callback
         layout = QVBoxLayout()
 
         # --- SCOPE PARAMETERS ---
@@ -47,42 +44,40 @@ class ParametersPanel(QWidget):
         self.range_spin = QDoubleSpinBox()
         self.range_spin.setRange(0.0, 10.0)
         self.range_spin.setSingleStep(0.1)
-        self.range_spin.valueChanged.connect(set_range_cb)
+        self.range_spin.valueChanged.connect(self.range_changed.emit)
         scope_layout.addRow("Range:", self.range_spin)
 
         self.bandwidth_spin = QDoubleSpinBox()
         self.bandwidth_spin.setRange(0.0, 100e6)
         self.bandwidth_spin.setSingleStep(100e3)
-        self.bandwidth_spin.valueChanged.connect(set_bandwidth_cb)
+        self.bandwidth_spin.valueChanged.connect(self.bandwidth_changed.emit)
         scope_layout.addRow("Bandwidth:", self.bandwidth_spin)
 
         self.coupling_combo = QComboBox()
         self.coupling_combo.addItems(["dc", "ac"])
-        self.coupling_combo.currentTextChanged.connect(set_coupling_cb)
+        self.coupling_combo.currentTextChanged.connect(self.coupling_changed.emit)
         scope_layout.addRow("Coupling:", self.coupling_combo)
 
         self.trigger_spin = QDoubleSpinBox()
         self.trigger_spin.setRange(-10.0, 10)
         self.trigger_spin.setSingleStep(0.1)
-        self.trigger_spin.valueChanged.connect(set_trigger_cb)
+        self.trigger_spin.valueChanged.connect(self.trigger_changed.emit)
         scope_layout.addRow("Trigger (V):", self.trigger_spin)
 
         self.hysteresis_spin = QDoubleSpinBox()
         self.hysteresis_spin.setRange(0.0, 5.0)
         self.hysteresis_spin.setSingleStep(0.1)
-        self.hysteresis_spin.valueChanged.connect(set_trigger_hysteresis_cb)
+        self.hysteresis_spin.valueChanged.connect(self.trigger_hysteresis_changed.emit)
         scope_layout.addRow("Trigger Hysteresis (V):", self.hysteresis_spin)
 
         self.sample_rate_spin = QDoubleSpinBox()
         self.sample_rate_spin.setRange(1.0, 100e6)
-        self.sample_rate_spin.setValue(300e3)
-        self.sample_rate_spin.valueChanged.connect(set_sample_rate_cb)
+        self.sample_rate_spin.valueChanged.connect(self.sample_rate_changed.emit)
         scope_layout.addRow("Sample Rate (Hz):", self.sample_rate_spin)
 
         self.buffer_size_spin = QSpinBox()
         self.buffer_size_spin.setRange(1, 32768)
-        self.buffer_size_spin.setValue(8192)
-        self.buffer_size_spin.valueChanged.connect(set_buffer_size_cb)
+        self.buffer_size_spin.valueChanged.connect(self.buffer_size_changed.emit)
         scope_layout.addRow("Buffer Size:", self.buffer_size_spin)
 
         scope_group.setLayout(scope_layout)
@@ -93,29 +88,25 @@ class ParametersPanel(QWidget):
         wavegen_layout = QFormLayout()
 
         self.function_combo = QComboBox()
-        self.function_combo.addItems(
-            ["sine", "square", "triangle", "ramp_up", "ramp_down", "dc"]
+        self.function_combo.addItems(["sine", "square", "triangle"])
+        self.function_combo.currentTextChanged.connect(
+            self.wavegen_function_changed.emit
         )
-        self.function_combo.setCurrentText("triangle")
-        self.function_combo.currentTextChanged.connect(set_wavegen_function_cb)
         wavegen_layout.addRow("Function:", self.function_combo)
 
         self.frequency_spin = QDoubleSpinBox()
         self.frequency_spin.setRange(0.1, 10e6)
-        self.frequency_spin.setValue(50.0)
-        self.frequency_spin.valueChanged.connect(set_wavegen_frequency_cb)
+        self.frequency_spin.valueChanged.connect(self.wavegen_frequency_changed.emit)
         wavegen_layout.addRow("Frequency (Hz):", self.frequency_spin)
 
         self.amplitude_spin = QDoubleSpinBox()
         self.amplitude_spin.setRange(0.0, 5.0)
-        self.amplitude_spin.setValue(0.2)
-        self.amplitude_spin.valueChanged.connect(set_wavegen_amplitude_cb)
+        self.amplitude_spin.valueChanged.connect(self.wavegen_amplitude_changed.emit)
         wavegen_layout.addRow("Amplitude (V):", self.amplitude_spin)
 
         self.offset_spin = QDoubleSpinBox()
         self.offset_spin.setRange(-5.0, 5.0)
-        self.offset_spin.setValue(-0.1)
-        self.offset_spin.valueChanged.connect(set_wavegen_offset_cb)
+        self.offset_spin.valueChanged.connect(self.wavegen_offset_changed.emit)
         wavegen_layout.addRow("Offset (V):", self.offset_spin)
 
         wavegen_group.setLayout(wavegen_layout)
@@ -126,21 +117,15 @@ class ParametersPanel(QWidget):
         gain_layout = QVBoxLayout()
 
         self.gain_a0_check = QCheckBox("Enable Gain A0")
-        self.gain_a0_check.stateChanged.connect(
-            lambda state: set_gain_a0_cb(bool(state))
-        )
+        self.gain_a0_check.toggled.connect(self.gain_a0_changed.emit)
         gain_layout.addWidget(self.gain_a0_check)
 
         self.gain_a1_check = QCheckBox("Enable Gain A1")
-        self.gain_a1_check.stateChanged.connect(
-            lambda state: set_gain_a1_cb(bool(state))
-        )
+        self.gain_a1_check.toggled.connect(self.gain_a1_changed.emit)
         gain_layout.addWidget(self.gain_a1_check)
 
         self.gain_a2_check = QCheckBox("Enable Gain A2")
-        self.gain_a2_check.stateChanged.connect(
-            lambda state: set_gain_a2_cb(bool(state))
-        )
+        self.gain_a2_check.toggled.connect(self.gain_a2_changed.emit)
         gain_layout.addWidget(self.gain_a2_check)
 
         gain_group.setLayout(gain_layout)
@@ -157,48 +142,25 @@ class ParametersPanel(QWidget):
         self.trigger_spin.setEnabled(True)
         self.hysteresis_spin.setEnabled(True)
 
-    # --- Scope GUI Setters ---
+    def apply_config(self, config: AppConfig):
+        """
+        Met à jour tous les widgets avec les valeurs de la configuration.
+        Ceci déclenchera automatiquement tous les signaux (ex: range_changed)
+        qui mettront à jour le hardware en cascade !
+        """
+        self.range_spin.setValue(config.scope_range)
+        self.bandwidth_spin.setValue(config.scope_bandwidth)
+        self.coupling_combo.setCurrentText(config.scope_coupling)
+        self.trigger_spin.setValue(config.scope_trigger)
+        self.hysteresis_spin.setValue(config.scope_hysteresis)
+        self.sample_rate_spin.setValue(config.scope_sample_rate)
+        self.buffer_size_spin.setValue(config.scope_buffer_size)
 
-    def set_scope_range(self, val: float):
-        self.range_spin.setValue(val)
+        self.function_combo.setCurrentText(config.wavegen_function)
+        self.frequency_spin.setValue(config.wavegen_frequency)
+        self.amplitude_spin.setValue(config.wavegen_amplitude)
+        self.offset_spin.setValue(config.wavegen_offset)
 
-    def set_scope_bandwidth(self, val: float):
-        self.bandwidth_spin.setValue(val)
-
-    def set_scope_coupling(self, val: str):
-        self.coupling_combo.setCurrentText(val)
-
-    def set_scope_trigger(self, val: float):
-        self.trigger_spin.setValue(val)
-
-    def set_scope_hysteresis(self, val: float):
-        self.hysteresis_spin.setValue(val)
-
-    def set_scope_sample_rate(self, val: float):
-        self.sample_rate_spin.setValue(val)
-
-    def set_scope_buffer_size(self, val: int):
-        self.buffer_size_spin.setValue(val)
-
-    # --- Wavegen GUI Setters ---
-    def set_wavegen_function(self, val: str):
-        self.function_combo.setCurrentText(val)
-
-    def set_wavegen_frequency(self, val: float):
-        self.frequency_spin.setValue(val)
-
-    def set_wavegen_amplitude(self, val: float):
-        self.amplitude_spin.setValue(val)
-
-    def set_wavegen_offset(self, val: float):
-        self.offset_spin.setValue(val)
-
-    # --- Gain GUI Setters ---
-    def set_gain_a0(self, val: bool):
-        self.gain_a0_check.setChecked(val)
-
-    def set_gain_a1(self, val: bool):
-        self.gain_a1_check.setChecked(val)
-
-    def set_gain_a2(self, val: bool):
-        self.gain_a2_check.setChecked(val)
+        self.gain_a0_check.setChecked(config.gain_a0)
+        self.gain_a1_check.setChecked(config.gain_a1)
+        self.gain_a2_check.setChecked(config.gain_a2)

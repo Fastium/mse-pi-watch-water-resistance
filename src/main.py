@@ -5,28 +5,10 @@ import numpy as np
 from PySide6.QtCore import QObject, QThread, Signal
 from PySide6.QtWidgets import QApplication
 
+from application.config import AppConfig
 from middleware.controller import Controller
 from user_interface.window import Window
 from utils.file_utils import export_txt
-
-# Default parameters for the straight laser test setup
-DEFAULT_SCOPE_RANGE_STR = 2
-DEFAULT_SCOPE_BANDWIDTH_STR = 300e3
-DEFAULT_SCOPE_COUPLING_STR = "ac"
-DEFAULT_SCOPE_TRIGGER = 0.4
-DEFAULT_SCOPE_HYSTERESIS = 0.1
-DEFAULT_SCOPE_TRIGGER_TOGGLED = False
-DEFAULT_SCOPE_SAMPLE_RATE = 300e3
-DEFAULT_SCOPE_BUFFER_SIZE = 8192
-
-DEFAULT_WAVEGEN_FUNCTION = "triangle"
-DEFAULT_WAVEGEN_FREQUENCY = 50.0
-DEFAULT_WAVEGEN_AMPLITUDE = 1.5
-DEFAULT_WAVEGEN_OFFSET = 0
-
-DEFAULT_GAIN_A0 = False
-DEFAULT_GAIN_A1 = True
-DEFAULT_GAIN_A2 = False
 
 
 class AcquisitionWorker(QObject):
@@ -63,47 +45,14 @@ class AcquisitionWorker(QObject):
         self.data_ready.emit(x_data, data)
 
 
-def setup_default(c: Controller, w: Window):
-    c.set_scope_range(DEFAULT_SCOPE_RANGE_STR)  # Correspond à "10 V"
-    c.set_scope_bandwidth(DEFAULT_SCOPE_BANDWIDTH_STR)  # Correspond à "Full"
-    c.set_scope_coupling(DEFAULT_SCOPE_COUPLING_STR)
-    c.set_scope_trigger(DEFAULT_SCOPE_TRIGGER)
-    c.set_scope_hysteresis(DEFAULT_SCOPE_HYSTERESIS)
-    c.set_scope_sample_rate(DEFAULT_SCOPE_SAMPLE_RATE)
-    c.set_scope_buffer_size(DEFAULT_SCOPE_BUFFER_SIZE)
-
-    c.set_wavegen_function(DEFAULT_WAVEGEN_FUNCTION)
-    c.set_wavegen_frequency(DEFAULT_WAVEGEN_FREQUENCY)
-    c.set_wavegen_amplitude(DEFAULT_WAVEGEN_AMPLITUDE)
-    c.set_wavegen_offset(DEFAULT_WAVEGEN_OFFSET)
-
-    c.set_gain_a0(DEFAULT_GAIN_A0)
-    c.set_gain_a1(DEFAULT_GAIN_A1)
-    c.set_gain_a2(DEFAULT_GAIN_A2)
-
-    # 2. Configuration de l'Interface Graphique (UI)
-    w.set_scope_range(DEFAULT_SCOPE_RANGE_STR)
-    w.set_scope_bandwidth(DEFAULT_SCOPE_BANDWIDTH_STR)
-    w.set_scope_coupling(DEFAULT_SCOPE_COUPLING_STR)
-    w.set_scope_trigger(DEFAULT_SCOPE_TRIGGER)
-    w.set_scope_hysteresis(DEFAULT_SCOPE_HYSTERESIS)
-    w.set_scope_sample_rate(DEFAULT_SCOPE_SAMPLE_RATE)
-    w.set_scope_buffer_size(DEFAULT_SCOPE_BUFFER_SIZE)
-
-    w.set_wavegen_function(DEFAULT_WAVEGEN_FUNCTION)
-    w.set_wavegen_frequency(DEFAULT_WAVEGEN_FREQUENCY)
-    w.set_wavegen_amplitude(DEFAULT_WAVEGEN_AMPLITUDE)
-    w.set_wavegen_offset(DEFAULT_WAVEGEN_OFFSET)
-
-    w.set_gain_a0(DEFAULT_GAIN_A0)
-    w.set_gain_a1(DEFAULT_GAIN_A1)
-    w.set_gain_a2(DEFAULT_GAIN_A2)
-
-
 def main():
     app = QApplication(sys.argv)
 
+    # 1. Instanciation des composants principaux
+    config = AppConfig()
     controller = Controller()
+
+    # Initialisation du Hardware
     controller.connect()
     controller.setup()
 
@@ -126,7 +75,7 @@ def main():
         thread.wait(100)  # Attente max de 100ms
         controller.stop()
 
-    def single_aquisition():
+    def single_acquisition():
         thread.started.connect(worker.single_run)
         controller.start()
         worker.start_working()
@@ -138,35 +87,52 @@ def main():
         thread.wait(100)  # Attente max de 100ms
         controller.stop()
 
-    window = Window(
-        start_scope=start_acquisition,
-        stop_scope=stop_acquisition,
-        single_start_scope=single_aquisition,
-        export_scope=export_txt,
-        # Scope parameters
-        set_range=controller.set_scope_range,
-        set_bandwidth=controller.set_scope_bandwidth,
-        set_coupling=controller.set_scope_coupling,
-        set_trigger=controller.set_scope_trigger,
-        set_trigger_hysteresis=controller.set_scope_hysteresis,
-        set_sample_rate=controller.set_scope_sample_rate,
-        set_buffer_size=controller.set_scope_buffer_size,
-        # Wavegen parameters
-        set_wavegen_function=controller.set_wavegen_function,
-        set_wavegen_frequency=controller.set_wavegen_frequency,
-        set_wavegen_amplitude=controller.set_wavegen_amplitude,
-        set_wavegen_offset=controller.set_wavegen_offset,
-        # Gain parameters
-        set_gain_a0=controller.set_gain_a0,
-        set_gain_a1=controller.set_gain_a1,
-        set_gain_a2=controller.set_gain_a2,
+    # 2. Instanciation de l'UI (Maintenant très propre !)
+    window = Window()
+
+    # 3. Câblage des Signaux (Architecture Orientée Événements)
+
+    # -> Câblage du Scope
+    window.scope.start_requested.connect(start_acquisition)
+    window.scope.stop_requested.connect(stop_acquisition)
+    window.scope.single_start_requested.connect(single_acquisition)
+    window.scope.export_requested.connect(export_txt)
+
+    # -> Câblage des Paramètres Scope
+    window.parameters.range_changed.connect(controller.set_scope_range)
+    window.parameters.bandwidth_changed.connect(controller.set_scope_bandwidth)
+    window.parameters.coupling_changed.connect(controller.set_scope_coupling)
+    window.parameters.trigger_changed.connect(controller.set_scope_trigger)
+    window.parameters.trigger_hysteresis_changed.connect(
+        controller.set_scope_hysteresis
     )
+    window.parameters.sample_rate_changed.connect(controller.set_scope_sample_rate)
+    window.parameters.buffer_size_changed.connect(controller.set_scope_buffer_size)
 
-    setup_default(controller, window)
+    # -> Câblage des Paramètres Wavegen
+    window.parameters.wavegen_function_changed.connect(controller.set_wavegen_function)
+    window.parameters.wavegen_frequency_changed.connect(
+        controller.set_wavegen_frequency
+    )
+    window.parameters.wavegen_amplitude_changed.connect(
+        controller.set_wavegen_amplitude
+    )
+    window.parameters.wavegen_offset_changed.connect(controller.set_wavegen_offset)
 
-    # Connexion du signal de données du worker à l'affichage de la fenêtre
+    # -> Câblage des Paramètres de Gain
+    window.parameters.gain_a0_changed.connect(controller.set_gain_a0)
+    window.parameters.gain_a1_changed.connect(controller.set_gain_a1)
+    window.parameters.gain_a2_changed.connect(controller.set_gain_a2)
+
+    # -> Câblage du retour de données (Worker -> UI)
     worker.data_ready.connect(window.set_data)
 
+    # 4. Initialisation en "Cascade"
+    # On applique la config à l'UI. L'UI met à jour ses widgets.
+    # Les widgets émettent leurs signaux qui configurent le Hardware via les connexions ci-dessus.
+    window.apply_config(config)
+
+    # Affichage
     window.show()
 
     # Disconnect the controller when the application is closed
