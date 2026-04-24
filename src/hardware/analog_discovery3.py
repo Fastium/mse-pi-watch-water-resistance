@@ -72,8 +72,9 @@ class AD3:
                 bandwidth=self.scope_bandwidth,
                 coupling=self.scope_coupling,
             )
+
             self.scope.setup_edge_trigger(
-                mode="normal",
+                mode="auto",
                 channel=SCOPE_INDEX,
                 slope="rising",
                 level=self.scope_trigger,

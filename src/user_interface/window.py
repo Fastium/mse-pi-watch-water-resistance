@@ -45,15 +45,6 @@ class Window(QMainWindow):
         central_widget = QWidget()
         main_layout = QHBoxLayout()  # Horizontal
 
-        # Instantiate and add the Scope widget
-        self.scope = Scope(
-            start=start_scope,
-            stop=stop_scope,
-            export=export_scope,
-            single_start=single_start_scope,
-        )
-        main_layout.addWidget(self.scope, stretch=3)
-
         # Instantiate and add the Parameters panel on the right
         self.parameters = ParametersPanel(
             set_range_cb=set_range,
@@ -71,6 +62,18 @@ class Window(QMainWindow):
             set_gain_a1_cb=set_gain_a1,
             set_gain_a2_cb=set_gain_a2,
         )
+
+        # Instantiate and add the Scope widget
+        self.scope = Scope(
+            start=start_scope,
+            stop=stop_scope,
+            enable_trigger=self.parameters.enable_trigger,
+            disable_trigger=self.parameters.disable_trigger,
+            export=export_scope,
+            single_start=single_start_scope,
+        )
+        main_layout.addWidget(self.scope, stretch=3)
+
         main_layout.addWidget(self.parameters, stretch=1)
 
         central_widget.setLayout(main_layout)

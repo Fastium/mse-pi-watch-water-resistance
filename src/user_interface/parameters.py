@@ -6,6 +6,8 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QFormLayout,
     QGroupBox,
+    QHBoxLayout,
+    QPushButton,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -34,6 +36,8 @@ class ParametersPanel(QWidget):
         set_gain_a2_cb: Callable[[bool], None],
     ):
         super().__init__()
+
+        # Callback
         layout = QVBoxLayout()
 
         # --- SCOPE PARAMETERS ---
@@ -43,7 +47,7 @@ class ParametersPanel(QWidget):
         self.range_spin = QDoubleSpinBox()
         self.range_spin.setRange(0.0, 10.0)
         self.range_spin.setSingleStep(0.1)
-        self.range_spin.valueChanged.connect(set_trigger_hysteresis_cb)
+        self.range_spin.valueChanged.connect(set_range_cb)
         scope_layout.addRow("Range:", self.range_spin)
 
         self.bandwidth_spin = QDoubleSpinBox()
@@ -61,7 +65,7 @@ class ParametersPanel(QWidget):
         self.trigger_spin.setRange(-10.0, 10)
         self.trigger_spin.setSingleStep(0.1)
         self.trigger_spin.valueChanged.connect(set_trigger_cb)
-        scope_layout.addRow("Trigger Level (V):", self.trigger_spin)
+        scope_layout.addRow("Trigger (V):", self.trigger_spin)
 
         self.hysteresis_spin = QDoubleSpinBox()
         self.hysteresis_spin.setRange(0.0, 5.0)
@@ -145,7 +149,15 @@ class ParametersPanel(QWidget):
         layout.addStretch()
         self.setLayout(layout)
 
-        # --- Scope GUI Setters ---
+    def disable_trigger(self):
+        self.trigger_spin.setEnabled(False)
+        self.hysteresis_spin.setEnabled(False)
+
+    def enable_trigger(self):
+        self.trigger_spin.setEnabled(True)
+        self.hysteresis_spin.setEnabled(True)
+
+    # --- Scope GUI Setters ---
 
     def set_scope_range(self, val: float):
         self.range_spin.setValue(val)

@@ -16,6 +16,8 @@ class Scope(QGroupBox):
         self,
         start: Callable[[], None],
         stop: Callable[[], None],
+        enable_trigger: Callable[[], None],
+        disable_trigger: Callable[[], None],
         single_start: Callable[[], None],
         export: Callable[[np.ndarray, str], None],
     ):
@@ -31,6 +33,16 @@ class Scope(QGroupBox):
             self.stop_callback = stop
         else:
             raise ValueError("stop must be a callable")
+
+        if enable_trigger is not None:
+            self.enable_trigger_callback = enable_trigger
+        else:
+            raise ValueError("enable_trigger must be a callable")
+
+        if disable_trigger is not None:
+            self.disable_trigger_callback = disable_trigger
+        else:
+            raise ValueError("disable_trigger must be a callable")
 
         if single_start is not None:
             self.single_start_callback = single_start
@@ -93,11 +105,13 @@ class Scope(QGroupBox):
             self.start_callback()
             # disable single start
             self.single_start_btn.setEnabled(False)
+            self.disable_trigger_callback()
         else:
             self.toggle_btn.setText("Start")
             self.stop_callback()
             # enable single start
             self.single_start_btn.setEnabled(True)
+            self.enable_trigger_callback()
 
     def _on_export(self):
         print("Export :")
