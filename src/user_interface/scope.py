@@ -1,7 +1,6 @@
-from typing import Callable
-
 import numpy as np
 import pyqtgraph as pg
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
@@ -12,47 +11,16 @@ from PySide6.QtWidgets import (
 
 
 class Scope(QGroupBox):
-    def __init__(
-        self,
-        start: Callable[[], None],
-        stop: Callable[[], None],
-        enable_trigger: Callable[[], None],
-        disable_trigger: Callable[[], None],
-        single_start: Callable[[], None],
-        export: Callable[[np.ndarray, str], None],
-    ):
+    # --- Déclaration des Signaux ---
+    start_requested = Signal()
+    stop_requested = Signal()
+    single_start_requested = Signal()
+    export_requested = Signal(np.ndarray, str)
+    enable_trigger_requested = Signal()
+    disable_trigger_requested = Signal()
+
+    def __init__(self):
         super().__init__()
-
-        # Setup callbacks for the toggle button
-        if start is not None:
-            self.start_callback = start
-        else:
-            raise ValueError("start must be a callable")
-
-        if stop is not None:
-            self.stop_callback = stop
-        else:
-            raise ValueError("stop must be a callable")
-
-        if enable_trigger is not None:
-            self.enable_trigger_callback = enable_trigger
-        else:
-            raise ValueError("enable_trigger must be a callable")
-
-        if disable_trigger is not None:
-            self.disable_trigger_callback = disable_trigger
-        else:
-            raise ValueError("disable_trigger must be a callable")
-
-        if single_start is not None:
-            self.single_start_callback = single_start
-        else:
-            raise ValueError("single_start must be a callable")
-
-        if export is not None:
-            self.export_callback = export
-        else:
-            raise ValueError("export must be a callable")
 
         # Setup the toggle button (top-left)
         self.toggle_btn = QPushButton("Start")
@@ -61,11 +29,11 @@ class Scope(QGroupBox):
 
         # setup single start button
         self.single_start_btn = QPushButton("Single Start")
-        self.single_start_btn.clicked.connect(self._on_single_start)
+        # On émet directement le signal lors du clic
+        self.single_start_btn.clicked.connect(self.single_start_requested.emit)
 
         # export button
         self.export_btn = QPushButton("Export as txt")
-        self.export_btn.setText("Export as txt")
         self.export_btn.clicked.connect(self._on_export)
 
         # export filename
@@ -102,32 +70,29 @@ class Scope(QGroupBox):
         """Handle button toggle state to start/stop the scope."""
         if checked:
             self.toggle_btn.setText("Stop")
-            self.start_callback()
+            self.start_requested.emit()
+
             # disable single start
             self.single_start_btn.setEnabled(False)
-            self.disable_trigger_callback()
+            self.disable_trigger_requested.emit()
         else:
             self.toggle_btn.setText("Start")
-            self.stop_callback()
+            self.stop_requested.emit()
+
             # enable single start
             self.single_start_btn.setEnabled(True)
-            self.enable_trigger_callback()
+            self.enable_trigger_requested.emit()
 
     def _on_export(self):
         print("Export :")
-        y_data = self.curve.getData()
+        data = self.curve.getData()
         name = self.export_filename.text() + ".txt"
 
-        if y_data is not None:
-            self.export_callback(np.array(y_data), name)
+        if data is not None:
+            # getData() renvoie un tuple (x, y), on le convertit en array comme dans ton code original
+            self.export_requested.emit(np.array(data), name)
         else:
             print("No data to export yet.")
-
-    def _on_single_start(self):
-        if self.single_start_callback is not None:
-            self.single_start_callback()
-        else:
-            print("No single start callback set.")
 
     def set_data(self, x_data: np.ndarray, y_data: np.ndarray):
         """Update the displayed values on the scope."""
