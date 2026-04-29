@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.signal
 
 from application.config import AppConfig
 
@@ -33,7 +34,7 @@ class MockAD3:
         self.gain_a1 = config.gain_a1
         self.gain_a2 = config.gain_a2
 
-        self.t = 0.0  # Used to simulate continuous time
+        self.t = 0.0  # Used to simulate continuous time (untriggered mode)
 
     def open(self):
         print("[MockAD3] Device opened")
@@ -45,20 +46,13 @@ class MockAD3:
 
     def setup_wavegen(self):
         if self.is_open:
-            print(
-                f"[MockAD3] SETUP WAVEGEN -> func={self.wavegen_function}, freq={self.wavegen_frequency}Hz, "
-                f"amp={self.wavegen_amplitude}V, offset={self.wavegen_offset}V"
-            )
+            pass  # Keep terminal clean
         else:
             print("[MockAD3] SETUP WAVEGEN -> Device not opened")
 
     def setup_scope(self):
         if self.is_open:
-            print(
-                f"[MockAD3] SETUP SCOPE -> range={self.scope_range}V, bw={self.scope_bandwidth}Hz, "
-                f"coupling={self.scope_coupling}, trigger={self.scope_trigger}V, hyst={self.scope_hysteresis}V, "
-                f"sample_rate={self.scope_sample_rate}Hz, buffer_size={self.scope_buffer_size}"
-            )
+            pass  # Keep terminal clean
         else:
             print("[MockAD3] SETUP SCOPE -> Device not opened")
 
@@ -77,95 +71,125 @@ class MockAD3:
             print("[MockAD3] Wavegen STOPPED -> Device not opened")
 
     def get_scope_data(self) -> np.ndarray:
-        import time
-
         if not self.is_open:
             raise RuntimeError("Device not opened")
 
-        # --- SIMULATION DU TRIGGER ---
-        # On vérifie si le niveau de trigger demandé est dans les bornes de notre signal
-        while True:
-            is_triggered = False
-            if self.wavegen_running:
-                sig_max = self.wavegen_offset + self.wavegen_amplitude
-                sig_min = self.wavegen_offset - self.wavegen_amplitude
-                if sig_min <= self.scope_trigger <= sig_max:
-                    is_triggered = True
+        import time
+
+        # Simulate hardware delay for data acquisition
+        time.sleep(0.02)
+
+        is_triggered = False
+        v_norm = 0.0
+
+        # --- MATH TRIGGER STRATEGY ---
+        if self.wavegen_running and self.wavegen_amplitude > 0:
+            # Check if trigger level is within the wavegen signal bounds
+            v_norm = (self.scope_trigger - self.wavegen_offset) / self.wavegen_amplitude
+            if -1.0 <= v_norm <= 1.0:
+                is_triggered = True
+        elif not self.wavegen_running:
+            # If no signal, trigger only on pure noise around 0V
+            noise_amp = self.scope_range * 0.002
+            if -noise_amp <= self.scope_trigger <= noise_amp:
+                is_triggered = True
+
+        duration = self.scope_buffer_size / self.scope_sample_rate
+
+        if is_triggered and self.wavegen_running:
+            # Calculate the exact phase where the signal crosses the trigger level
+            if self.wavegen_function == "sine":
+                phase_trig = np.arcsin(v_norm)
+            elif self.wavegen_function == "square":
+                phase_trig = 0.0 if v_norm >= 0 else np.pi
+            elif self.wavegen_function == "triangle":
+                phase_trig = v_norm * (np.pi / 2)
             else:
-                # S'il n'y a que du bruit, le trigger doit être très proche de 0
-                noise_amp = self.scope_range * 0.002
-                if -noise_amp <= self.scope_trigger <= noise_amp:
-                    is_triggered = True
+                phase_trig = np.arcsin(v_norm)
 
-            if is_triggered:
-                break  # Le trigger est bon, on sort de l'attente
-
-            print(
-                f"[MockAD3] Waiting for trigger at {self.scope_trigger}V... (Signal out of bounds)"
+            # Convert phase to time, and offset it so the trigger point is at the center of the screen
+            t_trig = (
+                phase_trig / (2 * np.pi * self.wavegen_frequency)
+                if self.wavegen_frequency > 0
+                else 0
             )
-            time.sleep(
-                1.0
-            )  # Bloque le thread courant pendant 1 seconde avant de réessayer
 
-        # Calculate time array for the buffer
-        t_array = np.linspace(
-            self.t,
-            self.t + self.scope_buffer_size / self.scope_sample_rate,
-            self.scope_buffer_size,
-        )
-        self.t = t_array[-1]  # Update time for the next call
+            t_start = t_trig - (duration / 2)  # Center the buffer around t_trig
+            t_array = np.linspace(
+                t_start, t_start + duration, self.scope_buffer_size, endpoint=False
+            )
+        else:
+            # Untriggered Mode (Free Run / Auto) -> The wave will visually scroll
+            t_array = np.linspace(
+                self.t, self.t + duration, self.scope_buffer_size, endpoint=False
+            )
+            self.t = t_array[-1]
 
-        # Generate base signal based on wavegen settings
+        # Generate base signal
         if self.wavegen_running:
             if self.wavegen_function == "sine":
                 signal = np.sin(2 * np.pi * self.wavegen_frequency * t_array)
             elif self.wavegen_function == "square":
-                signal = np.sign(np.sin(2 * np.pi * self.wavegen_frequency * t_array))
-            else:  # default to a simple sine for the mock if triangle/ramp
+                signal = scipy.signal.square(
+                    2 * np.pi * self.wavegen_frequency * t_array
+                )
+            elif self.wavegen_function == "triangle":
+                # Le paramètre 0.5 indique qu'il s'agit d'un triangle symétrique
+                signal = scipy.signal.sawtooth(
+                    2 * np.pi * self.wavegen_frequency * t_array, 0.5
+                )
+            else:
                 signal = np.sin(2 * np.pi * self.wavegen_frequency * t_array)
 
             signal = signal * self.wavegen_amplitude + self.wavegen_offset
-        else:
-            signal = np.zeros(self.scope_buffer_size)
 
         # Add random noise scaled to 2% of the scope range
         noise = np.random.normal(0, self.scope_range, self.scope_buffer_size) * 0.02
-
-        # Combine and clip the data to the scope limits (-range to +range)
         data = np.clip(signal + noise, -self.scope_range, self.scope_range)
 
         return data
 
     def setup_io(self):
-        if self.is_open:
-            print(
-                f"[MockAD3] SETUP IO -> A0={self.gain_a0}, A1={self.gain_a1}, A2={self.gain_a2}"
-            )
-        else:
+        if not self.is_open:
             print("[MockAD3] SETUP IO -> Device not opened")
 
-    # Setters
-    def set_scope_range(self, range: float):
-        self.scope_range = range
+    # --- Scope Setters (Protected during run) ---
+    def set_scope_range(self, range_val: float):
+        if self.wavegen_running:
+            return
+        self.scope_range = range_val
 
     def set_scope_bandwidth(self, bandwidth: float):
+        if self.wavegen_running:
+            return
         self.scope_bandwidth = bandwidth
 
     def set_scope_coupling(self, coupling: str):
+        if self.wavegen_running:
+            return
         self.scope_coupling = coupling
 
     def set_scope_trigger(self, trigger: float):
+        if self.wavegen_running:
+            return
         self.scope_trigger = trigger
 
     def set_scope_hysteresis(self, hysteresis: float):
+        if self.wavegen_running:
+            return
         self.scope_hysteresis = hysteresis
 
     def set_scope_sample_rate(self, sample_rate: float):
+        if self.wavegen_running:
+            return
         self.scope_sample_rate = sample_rate
 
     def set_scope_buffer_size(self, buffer_size: int):
+        if self.wavegen_running:
+            return
         self.scope_buffer_size = buffer_size
 
+    # --- Wavegen & Gain setters ---
     def set_wavegen_function(self, function: str):
         self.wavegen_function = function
 
