@@ -134,16 +134,6 @@ class ParametersPanel(QWidget):
         layout.addStretch()
         self.setLayout(layout)
 
-    def disable_trigger(self):
-        print("disable_trigger")
-        # self.trigger_spin.setEnabled(False)
-        # self.hysteresis_spin.setEnabled(False)
-
-    def enable_trigger(self):
-        print("enable_trigger")
-        # self.trigger_spin.setEnabled(True)
-        # self.hysteresis_spin.setEnabled(True)
-
     def apply_config(self, config: AppConfig):
         """
         Met à jour tous les widgets avec les valeurs de la configuration.

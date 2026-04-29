@@ -25,11 +25,6 @@ class Window(QMainWindow):
         self.parameters = ParametersPanel()
         self.scope = Scope()
 
-        # --- Internal UI Connections ---
-        # Le Scope demande à désactiver/activer le trigger quand il démarre/s'arrête
-        self.scope.disable_trigger_requested.connect(self.parameters.disable_trigger)
-        self.scope.enable_trigger_requested.connect(self.parameters.enable_trigger)
-
         # Add widgets to layout
         main_layout.addWidget(self.scope, stretch=3)
         main_layout.addWidget(self.parameters, stretch=1)
