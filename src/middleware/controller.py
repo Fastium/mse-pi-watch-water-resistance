@@ -16,8 +16,8 @@ MAX_AMPLITUDE = 5
 class Controller:
     def __init__(self):
 
-        # self.ad3 = AD3()
-        self.ad3 = MockAD3()
+        self.ad3 = AD3()
+        # self.ad3 = MockAD3()
 
     def connect(self):
         print("Connect")
@@ -48,31 +48,24 @@ class Controller:
     # --- Scope setters ---
     def set_scope_range(self, range_val: float):
         self.ad3.set_scope_range(range_val)
-        self.ad3.setup_scope()
 
     def set_scope_bandwidth(self, bandwidth: float):
         self.ad3.set_scope_bandwidth(bandwidth)
-        self.ad3.setup_scope()
 
     def set_scope_coupling(self, coupling: str):
         self.ad3.set_scope_coupling(coupling)
-        self.ad3.setup_scope()
 
     def set_scope_trigger(self, trigger: float):
         self.ad3.set_scope_trigger(trigger)
-        self.ad3.setup_scope()
 
     def set_scope_hysteresis(self, hysteresis: float):
         self.ad3.set_scope_hysteresis(hysteresis)
-        self.ad3.setup_scope()
 
     def set_scope_sample_rate(self, sample_rate: float):
         self.ad3.set_scope_sample_rate(sample_rate)
-        self.ad3.setup_scope()
 
     def set_scope_buffer_size(self, buffer_size: int):
         self.ad3.set_scope_buffer_size(buffer_size)
-        self.ad3.setup_scope()
 
     # --- Wavegen setters ---
     def set_wavegen_function(self, function: str):
