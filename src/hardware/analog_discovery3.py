@@ -45,11 +45,6 @@ class AD3:
         self.gain_a1 = config.gain_a1
         self.gain_a2 = config.gain_a2
 
-        # gain
-        self.gain_a0 = False
-        self.gain_a1 = False
-        self.gain_a2 = False
-
     def open(self):
         self.device.open()
         self.wavegen = self.device.analog_output
