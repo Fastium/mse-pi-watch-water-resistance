@@ -135,12 +135,14 @@ class ParametersPanel(QWidget):
         self.setLayout(layout)
 
     def disable_trigger(self):
-        self.trigger_spin.setEnabled(False)
-        self.hysteresis_spin.setEnabled(False)
+        print("disable_trigger")
+        # self.trigger_spin.setEnabled(False)
+        # self.hysteresis_spin.setEnabled(False)
 
     def enable_trigger(self):
-        self.trigger_spin.setEnabled(True)
-        self.hysteresis_spin.setEnabled(True)
+        print("enable_trigger")
+        # self.trigger_spin.setEnabled(True)
+        # self.hysteresis_spin.setEnabled(True)
 
     def apply_config(self, config: AppConfig):
         """

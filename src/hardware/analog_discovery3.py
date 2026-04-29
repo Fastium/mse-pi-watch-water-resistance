@@ -106,6 +106,8 @@ class AD3:
         if self.scope is None:
             raise RuntimeError("Scope not initialized")
 
+        self.setup_scope()
+
         self.scope.single(
             sample_rate=self.scope_sample_rate,
             buffer_size=self.scope_buffer_size,
