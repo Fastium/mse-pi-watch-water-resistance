@@ -26,11 +26,21 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import pandas as pd
 
-# Avoid backend/cache issues in headless environments.
-os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
-os.environ.setdefault("XDG_CACHE_HOME", "/tmp")
 import matplotlib
-matplotlib.use("Agg")
+
+# Use inline rendering in notebooks, and Agg only for headless/script contexts.
+try:
+    from IPython import get_ipython
+except Exception:
+    get_ipython = None
+
+ip = get_ipython() if get_ipython else None
+if ip is not None:
+    matplotlib.use("module://matplotlib_inline.backend_inline", force=True)
+else:
+    os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
+    os.environ.setdefault("XDG_CACHE_HOME", "/tmp")
+    matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 DATA_DIR = Path("data/raw/Mesures27062024")
