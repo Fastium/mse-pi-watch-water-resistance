@@ -41,9 +41,14 @@ class Scope(QGroupBox):
         self.export_filename.setText("measure-")
 
         # Setup scope graph (center)
-        self.graph = pg.PlotWidget(title="Scope")
-        self.graph.showGrid(x=True, y=True, alpha=0.3)
-        self.curve = self.graph.plot(pen="y")
+        self.graph_aquisition = pg.PlotWidget(title="Scope")
+        self.graph_aquisition.showGrid(x=True, y=True, alpha=0.3)
+        self.curve_aquisition = self.graph_aquisition.plot(pen="y")
+
+        # Setup graph for absorbance
+        self.graph_absorbance = pg.PlotWidget(title="Absorbance")
+        self.graph_absorbance.showGrid(x=True, y=True, alpha=0.3)
+        self.curve_absorbance = self.graph_absorbance.plot(pen="y")
 
         # Setup layouts
         main_layout = QVBoxLayout()
@@ -58,11 +63,16 @@ class Scope(QGroupBox):
 
         # Middle layout for the graph and Y-slider
         mid_layout = QHBoxLayout()
-        mid_layout.addWidget(self.graph)
+        mid_layout.addWidget(self.graph_aquisition)
+
+        # Add absorbance graph to the layout
+        low_layout = QHBoxLayout()
+        low_layout.addWidget(self.graph_absorbance)
 
         # Assemble the main layout
         main_layout.addLayout(top_layout)
         main_layout.addLayout(mid_layout)
+        main_layout.addLayout(low_layout)
 
         self.setLayout(main_layout)
 
@@ -85,15 +95,21 @@ class Scope(QGroupBox):
 
     def _on_export(self):
         print("Export :")
-        data = self.curve.getData()
+        data = self.curve_aquisition.getData()
         name = self.export_filename.text() + ".txt"
 
         if data is not None:
-            # getData() renvoie un tuple (x, y), on le convertit en array comme dans ton code original
             self.export_requested.emit(np.array(data), name)
         else:
             print("No data to export yet.")
 
-    def set_data(self, x_data: np.ndarray, y_data: np.ndarray):
+    def set_data(
+        self,
+        x_aquisition: np.ndarray,
+        y_aquisition: np.ndarray,
+        x_absorbance: np.ndarray,
+        y_absorbance: np.ndarray,
+    ):
         """Update the displayed values on the scope."""
-        self.curve.setData(x_data, y_data)
+        self.curve_aquisition.setData(x_aquisition, y_aquisition)
+        self.curve_absorbance.setData(x_absorbance, y_absorbance)

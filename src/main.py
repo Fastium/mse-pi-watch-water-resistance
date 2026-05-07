@@ -13,7 +13,7 @@ from utils.file_utils import export_txt
 
 class AcquisitionWorker(QObject):
     # Signal émis quand les données sont prêtes. Transmet les tableaux X et Y.
-    data_ready = Signal(np.ndarray, np.ndarray)
+    data_ready = Signal(np.ndarray, np.ndarray, np.ndarray, np.ndarray)
 
     def __init__(self, controller):
         super().__init__()
@@ -29,9 +29,7 @@ class AcquisitionWorker(QObject):
     def run(self):
         while self._is_running:
             try:
-                data = self.controller.get_scope_data()
-                x_data = np.arange(len(data))
-                self.data_ready.emit(x_data, data)
+                self.update()
             except RuntimeError:
                 pass  # Ignore si l'appareil n'est pas encore prêt
 
@@ -40,9 +38,13 @@ class AcquisitionWorker(QObject):
             time.sleep(0.01)
 
     def single_run(self):
-        data = self.controller.get_scope_data()
-        x_data = np.arange(len(data))
-        self.data_ready.emit(x_data, data)
+        self.update()
+
+    def update(self):
+        data_aquisition = self.controller.get_scope_data()
+        data_aborbance = data_aquisition  # TODO: add absorbance calculation
+        x_data = np.arange(len(data_aquisition))
+        self.data_ready.emit(x_data, data_aquisition, x_data, data_aborbance)
 
 
 def main():

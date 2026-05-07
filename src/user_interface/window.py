@@ -36,6 +36,17 @@ class Window(QMainWindow):
         """Met à jour les panneaux avec la configuration initiale."""
         self.parameters.apply_config(config)
 
-    def set_data(self, x_data: np.ndarray, y_data: np.ndarray):
+    def set_data(
+        self,
+        x_aquisition: np.ndarray,
+        y_aquisition: np.ndarray,
+        x_absorbance: np.ndarray,
+        y_absorbance: np.ndarray,
+    ):
         """Transfère les nouvelles données au graphique."""
-        self.scope.set_data(x_data, y_data)
+        self.scope.set_data(
+            x_aquisition,
+            y_aquisition,
+            x_absorbance,
+            y_absorbance,
+        )
