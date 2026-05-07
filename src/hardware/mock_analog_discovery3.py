@@ -107,7 +107,7 @@ class MockAD3:
             else:
                 phase_trig = np.arcsin(v_norm)
 
-            # Convert phase to time, and offset it so the trigger point is at the center of the screen
+            # Convert phase to time, and offset it so the trigger point is at the center of the screen1
             t_trig = (
                 phase_trig / (2 * np.pi * self.wavegen_frequency)
                 if self.wavegen_frequency > 0
@@ -136,7 +136,7 @@ class MockAD3:
             elif self.wavegen_function == "triangle":
                 # Le paramètre 0.5 indique qu'il s'agit d'un triangle symétrique
                 signal = scipy.signal.sawtooth(
-                    2 * np.pi * self.wavegen_frequency * t_array, 0.5
+                    2 * np.pi * self.wavegen_frequency * t_array, width=0.5
                 )
             else:
                 signal = np.sin(2 * np.pi * self.wavegen_frequency * t_array)

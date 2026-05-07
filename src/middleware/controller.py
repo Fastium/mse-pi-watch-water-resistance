@@ -16,7 +16,7 @@ MAX_AMPLITUDE = 5
 class Controller:
     def __init__(self):
 
-        # self.ad3 =s AD3()
+        # self.ad3 = AD3()
         self.ad3 = MockAD3()
 
     def connect(self):
