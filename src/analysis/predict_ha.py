@@ -46,9 +46,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
-from laser_matching_calibration import compute_A_full, compute_I0, extract_features, read_signal
-
+from laser_matching_calibration import (
+    compute_A_full,
+    compute_I0,
+    extract_features,
+    read_signal,
+)
 
 DEFAULT_PATTERN = "Mesures*.txt"
 DEFAULT_RUN_SUMMARY = Path("outputs/reports/laser_matching_run_summary.csv")
@@ -150,7 +153,9 @@ def collect_input_files(input_path: Path, pattern: str) -> list[Path]:
             ),
         )
         if not files:
-            raise FileNotFoundError(f"No files matched pattern '{pattern}' in {input_path}")
+            raise FileNotFoundError(
+                f"No files matched pattern '{pattern}' in {input_path}"
+            )
         return files
     raise FileNotFoundError(f"Input path not found: {input_path}")
 
@@ -216,7 +221,9 @@ def load_coefficients(
     return intercept, slope
 
 
-def resolve_path_length_correction(path_length: float | None) -> tuple[float, float, float]:
+def resolve_path_length_correction(
+    path_length: float | None,
+) -> tuple[float, float, float]:
     """Return multiplicative correction factor L_ref / L."""
     ref_path_length = float(DEFAULT_REF_PATH_LENGTH)
     current_path_length = ref_path_length if path_length is None else float(path_length)
@@ -305,8 +312,8 @@ def main() -> None:
         intercept_override=args.intercept,
         slope_override=args.slope,
     )
-    feature_correction_factor, path_length, ref_path_length = resolve_path_length_correction(
-        args.path_length
+    feature_correction_factor, path_length, ref_path_length = (
+        resolve_path_length_correction(args.path_length)
     )
 
     rows = []
