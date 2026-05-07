@@ -19,14 +19,13 @@ Option temperature (si besoin plus tard):
 
 import argparse
 import os
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from zipfile import ZipFile
-import xml.etree.ElementTree as ET
-
-import numpy as np
-import pandas as pd
 
 import matplotlib
+import numpy as np
+import pandas as pd
 
 # Use inline rendering in notebooks, and Agg only for headless/script contexts.
 try:
@@ -191,7 +190,9 @@ def build_laser_features() -> pd.DataFrame:
         key=lambda p: int(p.stem.split("_")[-1]),
     )
     if not paths:
-        raise FileNotFoundError(f"No signal found under {DATA_DIR} with {SIGNAL_PATTERN}")
+        raise FileNotFoundError(
+            f"No signal found under {DATA_DIR} with {SIGNAL_PATTERN}"
+        )
 
     rows = []
     # Pipeline scan par scan: lecture -> baseline -> absorbance -> features.
@@ -243,7 +244,9 @@ def _parse_xlsx_sheet_1(path: Path) -> pd.DataFrame:
         if numfmts is not None:
             for numfmt in numfmts.findall("a:numFmt", ns):
                 numfmt_id = int(numfmt.attrib["numFmtId"])
-                custom_numfmt[numfmt_id] = (numfmt.attrib.get("formatCode") or "").lower()
+                custom_numfmt[numfmt_id] = (
+                    numfmt.attrib.get("formatCode") or ""
+                ).lower()
 
         date_numfmt = {14, 15, 16, 17, 18, 19, 20, 21, 22, 45, 46, 47}
         date_style_ids = set()
@@ -282,7 +285,9 @@ def _parse_xlsx_sheet_1(path: Path) -> pd.DataFrame:
                         if style_id in date_style_ids:
                             try:
                                 serial = float(txt)
-                                value = pd.Timestamp("1899-12-30") + pd.to_timedelta(serial, unit="D")
+                                value = pd.Timestamp("1899-12-30") + pd.to_timedelta(
+                                    serial, unit="D"
+                                )
                             except Exception:
                                 value = txt
                         else:
@@ -343,12 +348,12 @@ def read_button_log_xlsx(path: Path, header_row: int = 9) -> pd.DataFrame:
     date_col = df["Date"]
     time_col = df["Heure"]
 
-    if np.issubdtype(date_col.dtype, np.datetime64):
+    if pd.api.types.is_datetime64_any_dtype(time_col):
         date_str = pd.to_datetime(date_col, errors="coerce").dt.strftime("%d/%m/%Y")
     else:
         date_str = date_col.astype(str).str.strip()
 
-    if np.issubdtype(time_col.dtype, np.datetime64):
+    if pd.api.types.is_datetime64_any_dtype(time_col):
         time_str = pd.to_datetime(time_col, errors="coerce").dt.strftime("%H:%M:%S")
     else:
         time_str = time_col.astype(str).str.strip()
@@ -422,10 +427,14 @@ def mapping_score(corr_df: pd.DataFrame) -> float:
     """Score global d'un mapping (plus grand = meilleur alignement)."""
     if corr_df.empty:
         return float("-inf")
-    return float(corr_df["corr_HA"].abs().median() + 0.5 * corr_df["corr_Abs"].abs().median())
+    return float(
+        corr_df["corr_HA"].abs().median() + 0.5 * corr_df["corr_Abs"].abs().median()
+    )
 
 
-def align_by_shift(df_laser: pd.DataFrame, df_btn: pd.DataFrame, shift: int) -> pd.DataFrame:
+def align_by_shift(
+    df_laser: pd.DataFrame, df_btn: pd.DataFrame, shift: int
+) -> pd.DataFrame:
     """Mapping indexe: btn_idx = scan_id + shift."""
     tmp = df_laser.copy()
     tmp["btn_idx"] = tmp["scan_id"] + shift
@@ -476,7 +485,10 @@ def evaluate_shift_candidates(
 
 
 def validate_shift_with_summary(
-    df_summary: pd.DataFrame, df_btn: pd.DataFrame, shift_min: int = -20, shift_max: int = 20
+    df_summary: pd.DataFrame,
+    df_btn: pd.DataFrame,
+    shift_min: int = -20,
+    shift_max: int = 20,
 ) -> tuple[int, float, int]:
     """Valide le shift via la corr(summary_abs, Abs_ref)."""
     best_shift = 0
@@ -497,7 +509,10 @@ def validate_shift_with_summary(
 
 
 def align_by_time(
-    df_laser: pd.DataFrame, df_btn: pd.DataFrame, df_summary: pd.DataFrame, tol_s: int = 12
+    df_laser: pd.DataFrame,
+    df_btn: pd.DataFrame,
+    df_summary: pd.DataFrame,
+    tol_s: int = 12,
 ) -> pd.DataFrame:
     """Mapping temporel par voisin le plus proche (merge_asof)."""
     scan = df_laser.merge(df_summary[["scan_id", "scan_dt"]], on="scan_id", how="inner")
@@ -514,8 +529,12 @@ def align_by_time(
     )
     merged = merged.dropna(subset=["btn_idx"]).copy()
     merged["btn_idx"] = merged["btn_idx"].astype(int)
-    merged["time_err_s"] = (merged["scan_dt"] - merged["btn_dt"]).dt.total_seconds().abs()
-    merged = merged.sort_values(["btn_idx", "time_err_s"]).drop_duplicates("btn_idx", keep="first")
+    merged["time_err_s"] = (
+        (merged["scan_dt"] - merged["btn_dt"]).dt.total_seconds().abs()
+    )
+    merged = merged.sort_values(["btn_idx", "time_err_s"]).drop_duplicates(
+        "btn_idx", keep="first"
+    )
     return merged.sort_values("scan_id").reset_index(drop=True)
 
 
@@ -528,7 +547,9 @@ def _zscore(x: np.ndarray) -> np.ndarray:
     return (x - mu) / sd
 
 
-def dtw_path(x: np.ndarray, y: np.ndarray, window: int | None = None) -> list[tuple[int, int]]:
+def dtw_path(
+    x: np.ndarray, y: np.ndarray, window: int | None = None
+) -> list[tuple[int, int]]:
     """Calcule le chemin DTW (avec contrainte de fenetre)."""
     n = len(x)
     m = len(y)
@@ -571,7 +592,10 @@ def dtw_path(x: np.ndarray, y: np.ndarray, window: int | None = None) -> list[tu
 
 
 def align_by_dtw(
-    df_laser: pd.DataFrame, df_btn: pd.DataFrame, feature_col: str = "F_p95", window: int = 35
+    df_laser: pd.DataFrame,
+    df_btn: pd.DataFrame,
+    feature_col: str = "F_p95",
+    window: int = 35,
 ) -> pd.DataFrame:
     """Mapping alternatif par DTW (diagnostic/fallback)."""
     scan = df_laser.sort_values("scan_id").reset_index(drop=True).copy()
@@ -583,7 +607,10 @@ def align_by_dtw(
 
     pairs = pd.DataFrame(path, columns=["scan_pos", "btn_pos"])
     map_pos = (
-        pairs.groupby("scan_pos", as_index=False)["btn_pos"].median().round().astype(int)
+        pairs.groupby("scan_pos", as_index=False)["btn_pos"]
+        .median()
+        .round()
+        .astype(int)
     )
     map_pos["btn_pos"] = map_pos["btn_pos"].clip(lower=0, upper=len(btn) - 1)
 
@@ -595,9 +622,13 @@ def align_by_dtw(
     return aligned.sort_values("scan_id").reset_index(drop=True)
 
 
-def fit_linear_model(df: pd.DataFrame, x_cols: list[str], y_col: str = "HA_ref") -> tuple[np.ndarray, np.ndarray]:
+def fit_linear_model(
+    df: pd.DataFrame, x_cols: list[str], y_col: str = "HA_ref"
+) -> tuple[np.ndarray, np.ndarray]:
     """Ajuste une regression lineaire (moindres carres) et retourne (coef, y_pred)."""
-    X = np.column_stack([np.ones(len(df))] + [df[c].to_numpy(dtype=float) for c in x_cols])
+    X = np.column_stack(
+        [np.ones(len(df))] + [df[c].to_numpy(dtype=float) for c in x_cols]
+    )
     y = df[y_col].to_numpy(dtype=float)
     coef = np.linalg.lstsq(X, y, rcond=None)[0]
     y_pred = X @ coef
@@ -616,7 +647,9 @@ def metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
 
 
 def run_calibration(
-    aligned: pd.DataFrame, feature_col: str, include_temperature: bool = USE_TEMPERATURE_DEFAULT
+    aligned: pd.DataFrame,
+    feature_col: str,
+    include_temperature: bool = USE_TEMPERATURE_DEFAULT,
 ) -> tuple[pd.DataFrame, pd.DataFrame, str]:
     """
     Lance la calibration avec split chronologique:
@@ -625,7 +658,11 @@ def run_calibration(
 
     Le mode par defaut est SANS temperature (HA ~ feature).
     """
-    data = aligned.sort_values("scan_id")[[feature_col, "T", "HA_ref", "scan_id"]].dropna().reset_index(drop=True)
+    data = (
+        aligned.sort_values("scan_id")[[feature_col, "T", "HA_ref", "scan_id"]]
+        .dropna()
+        .reset_index(drop=True)
+    )
     n = len(data)
     cut = int(0.7 * n)
     train = data.iloc[:cut].copy()
@@ -644,7 +681,9 @@ def run_calibration(
         coef_all, pred_all = fit_linear_model(data, cols, y_col="HA_ref")
         coef_train, pred_train = fit_linear_model(train, cols, y_col="HA_ref")
 
-        X_test = np.column_stack([np.ones(len(test))] + [test[c].to_numpy(dtype=float) for c in cols])
+        X_test = np.column_stack(
+            [np.ones(len(test))] + [test[c].to_numpy(dtype=float) for c in cols]
+        )
         pred_test = X_test @ coef_train
 
         m_all = metrics(data["HA_ref"].to_numpy(dtype=float), pred_all)
@@ -694,7 +733,9 @@ def run_calibration(
                     "scan_id": test["scan_id"].to_numpy(dtype=int),
                     "HA_ref": test["HA_ref"].to_numpy(dtype=float),
                     "HA_pred": pred_test.astype(float),
-                    "residual": (test["HA_ref"].to_numpy(dtype=float) - pred_test).astype(float),
+                    "residual": (
+                        test["HA_ref"].to_numpy(dtype=float) - pred_test
+                    ).astype(float),
                     "model": model_name,
                 }
             )
@@ -716,7 +757,9 @@ def make_plots(
     # Shift score curve
     plt.figure(figsize=(10, 4))
     plt.plot(shift_scores["shift"], shift_scores["score"], marker="o", ms=3)
-    plt.axvline(best_shift, color="tab:red", linestyle="--", label=f"best shift={best_shift}")
+    plt.axvline(
+        best_shift, color="tab:red", linestyle="--", label=f"best shift={best_shift}"
+    )
     plt.xlabel("Index shift (btn_idx = scan_id + shift)")
     plt.ylabel("Matching score")
     plt.title("Shift search for scan-button matching")
@@ -909,7 +952,9 @@ def main(include_temperature: bool = USE_TEMPERATURE_DEFAULT) -> None:
     )
     print(f"- Final matching method: {final_method}")
     print(f"- Final pairs: {len(aligned_final)}")
-    print(f"- Best feature for HA: {best_feature} (corr={float(best_feature_row['corr_HA']):.4f})")
+    print(
+        f"- Best feature for HA: {best_feature} (corr={float(best_feature_row['corr_HA']):.4f})"
+    )
     print(f"- Calibration model: {selected_model_name}")
     print("- Saved reports:")
     print(f"  {OUT_REP_DIR / 'laser_matching_run_summary.csv'}")
