@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 )
 
 from application.config import AppConfig
+from user_interface.humidity import HumidityDisplay
 from user_interface.parameters import ParametersPanel
 from user_interface.scope import Scope
 
@@ -24,8 +25,10 @@ class Window(QMainWindow):
         # Instantiate panels without any callbacks!
         self.parameters = ParametersPanel()
         self.scope = Scope()
+        self.humidity = HumidityDisplay()
 
         # Add widgets to layout
+        main_layout.addWidget(self.humidity, stretch=1)
         main_layout.addWidget(self.scope, stretch=3)
         main_layout.addWidget(self.parameters, stretch=1)
 
@@ -42,6 +45,8 @@ class Window(QMainWindow):
         y_aquisition: np.ndarray,
         x_absorbance: np.ndarray,
         y_absorbance: np.ndarray,
+        humidity_relative: float,
+        humidity_absolute: float,
     ):
         """Transfère les nouvelles données au graphique."""
         self.scope.set_data(
@@ -50,3 +55,4 @@ class Window(QMainWindow):
             x_absorbance,
             y_absorbance,
         )
+        self.humidity.set_values(humidity_relative, humidity_absolute)

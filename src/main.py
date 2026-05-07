@@ -13,7 +13,7 @@ from utils.file_utils import export_txt
 
 class AcquisitionWorker(QObject):
     # Signal émis quand les données sont prêtes. Transmet les tableaux X et Y.
-    data_ready = Signal(np.ndarray, np.ndarray, np.ndarray, np.ndarray)
+    data_ready = Signal(np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float)
 
     def __init__(self, controller):
         super().__init__()
@@ -44,7 +44,21 @@ class AcquisitionWorker(QObject):
         data_aquisition = self.controller.get_scope_data()
         data_aborbance = data_aquisition  # TODO: add absorbance calculation
         x_data = np.arange(len(data_aquisition))
-        self.data_ready.emit(x_data, data_aquisition, x_data, data_aborbance)
+        relative_humidity = (
+            data_aquisition.mean() + 20
+        )  # TODO: add relative humidity calculation
+
+        absolute_humidity = (
+            data_aquisition.mean() + 40
+        )  # TODO: add absolute humidity calculation
+        self.data_ready.emit(
+            x_data,
+            data_aquisition,
+            x_data,
+            data_aborbance,
+            absolute_humidity,
+            relative_humidity,
+        )
 
 
 def main():
