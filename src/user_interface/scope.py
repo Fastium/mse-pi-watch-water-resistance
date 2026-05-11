@@ -39,7 +39,7 @@ class Scope(QGroupBox):
 
         # export filename
         self.export_filename = QLineEdit()
-        self.export_filename.setText("measure-")
+        self.export_filename.setText("measure")
 
         # runtime analysis labels
         self.ha_label = QLabel("HA: --")
@@ -103,7 +103,8 @@ class Scope(QGroupBox):
 
         if data is not None:
             # getData() renvoie un tuple (x, y), on le convertit en array comme dans ton code original
-            self.export_requested.emit(np.array(data), name)
+
+            self.export_requested.emit(np.array(data)[1], name)
         else:
             print("No data to export yet.")
 
