@@ -1,3 +1,4 @@
+from application.config import AppConfig
 from hardware.analog_discovery3 import AD3
 from hardware.mock_analog_discovery3 import MockAD3
 
@@ -16,8 +17,10 @@ MAX_AMPLITUDE = 5
 class Controller:
     def __init__(self):
 
-        # self.ad3 = AD3()
-        self.ad3 = MockAD3()
+        if AppConfig.simulation:
+            self.ad3 = MockAD3()
+        else:
+            self.ad3 = AD3()
 
     def connect(self):
         print("Connect")
