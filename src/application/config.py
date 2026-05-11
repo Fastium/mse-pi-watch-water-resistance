@@ -1,8 +1,11 @@
 from dataclasses import dataclass
+from pickle import FALSE
 
 
 @dataclass
 class AppConfig:
+    simulation = False
+
     # Scope
     scope_range: float = 2.0
     scope_bandwidth: float = 300e3
@@ -20,5 +23,5 @@ class AppConfig:
 
     # Gain
     gain_a0: bool = False
-    gain_a1: bool = True
+    gain_a1: bool = False
     gain_a2: bool = False
