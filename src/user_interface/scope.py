@@ -4,6 +4,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QPushButton,
     QVBoxLayout,
@@ -40,10 +41,19 @@ class Scope(QGroupBox):
         self.export_filename = QLineEdit()
         self.export_filename.setText("measure-")
 
+        # runtime analysis labels
+        self.ha_label = QLabel("HA: --")
+        self.feature_label = QLabel("Feature: --")
+
         # Setup scope graph (center)
         self.graph = pg.PlotWidget(title="Scope")
         self.graph.showGrid(x=True, y=True, alpha=0.3)
         self.curve = self.graph.plot(pen="y")
+
+        # Setup absorbance graph
+        self.abs_graph = pg.PlotWidget(title="Absorbance A(t)")
+        self.abs_graph.showGrid(x=True, y=True, alpha=0.3)
+        self.abs_curve = self.abs_graph.plot(pen=pg.mkPen("#ff8c00", width=2))
 
         # Setup layouts
         main_layout = QVBoxLayout()
@@ -54,11 +64,14 @@ class Scope(QGroupBox):
         top_layout.addWidget(self.single_start_btn)
         top_layout.addWidget(self.export_btn)
         top_layout.addWidget(self.export_filename)
+        top_layout.addWidget(self.ha_label)
+        top_layout.addWidget(self.feature_label)
         top_layout.addStretch()
 
         # Middle layout for the graph and Y-slider
-        mid_layout = QHBoxLayout()
+        mid_layout = QVBoxLayout()
         mid_layout.addWidget(self.graph)
+        mid_layout.addWidget(self.abs_graph)
 
         # Assemble the main layout
         main_layout.addLayout(top_layout)
@@ -97,3 +110,30 @@ class Scope(QGroupBox):
     def set_data(self, x_data: np.ndarray, y_data: np.ndarray):
         """Update the displayed values on the scope."""
         self.curve.setData(x_data, y_data)
+
+    def set_analysis(self, analysis: dict):
+        """Update HA/feature labels and absorbance plot."""
+        ha_pred = analysis.get("HA_pred")
+        feature_name = analysis.get("feature_name", "--")
+        feature_value = analysis.get("feature_value")
+        absorbance = analysis.get("A")
+
+        if ha_pred is None:
+            self.ha_label.setText("HA: --")
+        else:
+            self.ha_label.setText(f"HA: {float(ha_pred):.3f} g/m3")
+
+        if feature_value is None:
+            self.feature_label.setText(f"{feature_name}: --")
+        else:
+            self.feature_label.setText(
+                f"{feature_name}: {float(feature_value):.5f}"
+            )
+
+        if absorbance is None:
+            self.abs_curve.setData([], [])
+            return
+
+        a = np.asarray(absorbance, dtype=float).reshape(-1)
+        x = np.arange(len(a), dtype=float)
+        self.abs_curve.setData(x, a)

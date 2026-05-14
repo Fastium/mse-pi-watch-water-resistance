@@ -7,15 +7,28 @@ Ce script:
 1) lit les scans laser (.txt), construit I0(t), puis A(t),
 2) extrait des features robustes sur A(t),
 3) lit le log bouton (.xlsx XML ou .xls BIFF ancien),
-4) aligne scans et log bouton (summary/shift si disponible, sinon offset temporel),
-5) calibre (fit) HA_ref ~ feature (sans temperature par defaut),
-6) exporte CSV + figures de controle.
+4) aligne scans et log bouton:
+   - ancien jeu: validation summary + shift d'index
+   - jeu actuel: recherche d'offset temporel + agregat laser par mesure bouton
+5) choisit la feature la plus correlee a HA_ref,
+6) calibre (fit) HA_ref ~ feature (sans temperature par defaut),
+7) evalue la calibration avec:
+   - un split chronologique 70/30
+   - un split blocked_balanced plus adapte a un protocole "monotone sec -> humide" comme ce qu'à fait Yann
+8) exporte CSV + figures de controle.
 
 Usage standard (jeu de calibration actuel):
     python src/analysis/laser_matching_calibration.py
 
 Option temperature (si besoin plus tard):
     python src/analysis/laser_matching_calibration.py --with-temperature
+
+Exemple pour rerun explicitement l'ancien jeu du prof:
+    python src/analysis/laser_matching_calibration.py \
+      --data-dir data/raw/Mesures27062024 \
+      --button-path data/raw/Mesures27062024/HYGROBOUTON_LOCLE_DAS.xlsx \
+      --summary-path data/raw/Mesures27062024/Calibration27062024_summary.txt \
+      --signal-pattern "Mesures27062024_*.txt"
 """
 
 import argparse

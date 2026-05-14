@@ -13,6 +13,7 @@ from user_interface.scope import Scope
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.latest_analysis = None
 
         self.setWindowTitle("Scope Application")
         self.resize(1000, 600)
@@ -39,3 +40,8 @@ class Window(QMainWindow):
     def set_data(self, x_data: np.ndarray, y_data: np.ndarray):
         """Transfère les nouvelles données au graphique."""
         self.scope.set_data(x_data, y_data)
+
+    def set_analysis(self, analysis: dict):
+        """Stocke et affiche le dernier résultat d'analyse dans la GUI."""
+        self.latest_analysis = analysis
+        self.scope.set_analysis(analysis)
