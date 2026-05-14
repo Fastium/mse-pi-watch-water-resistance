@@ -5,6 +5,7 @@ import numpy as np
 from PySide6.QtCore import QObject, QThread, Signal
 from PySide6.QtWidgets import QApplication
 
+from analysis.humidity_runtime import load_calibration_model, predict_ha_from_signal
 from application.config import AppConfig
 from middleware.controller import Controller
 from user_interface.window import Window
@@ -14,10 +15,13 @@ from utils.file_utils import export_txt
 class AcquisitionWorker(QObject):
     # Signal émis quand les données sont prêtes. Transmet les tableaux X et Y.
     data_ready = Signal(np.ndarray, np.ndarray)
+    analysis_ready = Signal(dict)
 
-    def __init__(self, controller):
+    def __init__(self, controller, humidity_model=None, path_length: float | None = None):
         super().__init__()
         self.controller = controller
+        self.humidity_model = humidity_model
+        self.path_length = path_length
         self._is_running = False
 
     def start_working(self):
@@ -26,12 +30,29 @@ class AcquisitionWorker(QObject):
     def stop_working(self):
         self._is_running = False
 
+    def _emit_measurement(self, data: np.ndarray):
+        x_data = np.arange(len(data))
+        self.data_ready.emit(x_data, data)
+
+        if self.humidity_model is None:
+            return
+
+        try:
+            analysis = predict_ha_from_signal(
+                signal=data,
+                model=self.humidity_model,
+                path_length=self.path_length,
+            )
+            self.analysis_ready.emit(analysis)
+        except Exception as exc:
+            # Le scope doit continuer a vivre meme si l'analyse echoue.
+            print(f"[humidity-runtime] analysis failed: {exc}")
+
     def run(self):
         while self._is_running:
             try:
                 data = self.controller.get_scope_data()
-                x_data = np.arange(len(data))
-                self.data_ready.emit(x_data, data)
+                self._emit_measurement(data)
             except RuntimeError:
                 pass  # Ignore si l'appareil n'est pas encore prêt
 
@@ -41,8 +62,7 @@ class AcquisitionWorker(QObject):
 
     def single_run(self):
         data = self.controller.get_scope_data()
-        x_data = np.arange(len(data))
-        self.data_ready.emit(x_data, data)
+        self._emit_measurement(data)
 
 
 def main():
@@ -56,8 +76,18 @@ def main():
     controller.connect()
     controller.setup()
 
+    try:
+        humidity_model = load_calibration_model()
+        print(
+            "[humidity-runtime] loaded model "
+            f"{humidity_model.feature_name} -> HA from {humidity_model.calibration_metrics_path}"
+        )
+    except Exception as exc:
+        humidity_model = None
+        print(f"[humidity-runtime] disabled: {exc}")
+
     # Mise en place du Worker et du Thread
-    worker = AcquisitionWorker(controller)
+    worker = AcquisitionWorker(controller, humidity_model=humidity_model)
     thread = QThread()
     worker.moveToThread(thread)
 
@@ -126,6 +156,7 @@ def main():
 
     # -> Câblage du retour de données (Worker -> UI)
     worker.data_ready.connect(window.set_data)
+    worker.analysis_ready.connect(window.set_analysis)
 
     # 4. Initialisation en "Cascade"
     # On applique la config à l'UI. L'UI met à jour ses widgets.
