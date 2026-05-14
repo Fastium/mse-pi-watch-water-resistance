@@ -60,7 +60,7 @@ DEFAULT_OUTPUT = Path("outputs/reports/ha_predictions.csv")
 DEFAULT_ENRICHED_DIR = Path("data/processed/enriched_with_A_pred")
 
 # Reference path length from the professor's calibration setup.
-DEFAULT_REF_PATH_LENGTH = 46.0
+DEFAULT_REF_PATH_LENGTH = 4.6
 DEFAULT_PATH_LENGTH_UNIT = "mm"
 
 
