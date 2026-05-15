@@ -60,7 +60,7 @@ class ParametersPanel(QWidget):
 
         self.trigger_spin = QDoubleSpinBox()
         self.trigger_spin.setRange(-10.0, 10)
-        self.trigger_spin.setSingleStep(0.1)
+        self.trigger_spin.setSingleStep(0.01)
         self.trigger_spin.valueChanged.connect(self.trigger_changed.emit)
         scope_layout.addRow("Trigger (V):", self.trigger_spin)
 
@@ -72,11 +72,13 @@ class ParametersPanel(QWidget):
 
         self.sample_rate_spin = QDoubleSpinBox()
         self.sample_rate_spin.setRange(1.0, 100e6)
+        self.sample_rate_spin.setSingleStep(1.0e4)
         self.sample_rate_spin.valueChanged.connect(self.sample_rate_changed.emit)
         scope_layout.addRow("Sample Rate (Hz):", self.sample_rate_spin)
 
         self.buffer_size_spin = QSpinBox()
         self.buffer_size_spin.setRange(1, 32768)
+        self.buffer_size_spin.setSingleStep(25)
         self.buffer_size_spin.valueChanged.connect(self.buffer_size_changed.emit)
         scope_layout.addRow("Buffer Size:", self.buffer_size_spin)
 

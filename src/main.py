@@ -1,8 +1,9 @@
 import sys
 import time
+from datetime import datetime
 
 import numpy as np
-from PySide6.QtCore import QObject, QThread, Signal
+from PySide6.QtCore import QCoreApplication, QObject, QThread, Signal, Slot
 from PySide6.QtWidgets import QApplication
 
 from analysis.humidity_runtime import load_calibration_model, predict_ha_from_signal
@@ -13,22 +14,34 @@ from utils.file_utils import export_txt
 
 
 class AcquisitionWorker(QObject):
-    # Signal émis quand les données sont prêtes. Transmet les tableaux X et Y.
+    # Signal emitted when data is ready. Transmits X and Y arrays.
     data_ready = Signal(np.ndarray, np.ndarray)
     analysis_ready = Signal(dict)
 
-    def __init__(self, controller, humidity_model=None, path_length: float | None = None):
+    def __init__(self, controller,config, humidity_model=None, path_length: float | None = None):
         super().__init__()
         self.controller = controller
+        self.config = config
         self.humidity_model = humidity_model
         self.path_length = path_length
         self._is_running = False
 
-    def start_working(self):
-        self._is_running = True
+        # New flag to ensure mutual exclusivity
+        self._is_busy = False
 
-    def stop_working(self):
-        self._is_running = False
+    @Slot()
+    def run_continuous(self):
+        """Continuous mode: runs in a loop until stopped."""
+        # Mutual exclusion: Ignore if already doing something else
+        if self._is_busy:
+            return
+
+        self._is_busy = True
+        self._is_running = True
+        self.controller.start()
+
+        # Short delay to let the instrument initialize
+        time.sleep(0.1)
 
     def _emit_measurement(self, data: np.ndarray):
         x_data = np.arange(len(data))
@@ -54,28 +67,81 @@ class AcquisitionWorker(QObject):
                 data = self.controller.get_scope_data()
                 self._emit_measurement(data)
             except RuntimeError:
-                pass  # Ignore si l'appareil n'est pas encore prêt
+                pass  # Ignore if device is not ready yet
 
-            # Petite pause pour éviter de monopoliser le CPU à 100%
-            # si get_scope_data n'est pas bloquant
+            # Short pause to prevent 100% CPU usage
             time.sleep(0.01)
 
+            # CRITICAL FIX: Process events so the thread can receive the "stop_working" signal!
+            QCoreApplication.processEvents()
+
+        self.controller.stop()
+
+        # Free the worker for the next task
+        self._is_busy = False
+
+    @Slot()
+    def stop_working(self):
+        """Stops the continuous acquisition loop."""
+        self._is_running = False
+
+    @Slot()
     def single_run(self):
         data = self.controller.get_scope_data()
         self._emit_measurement(data)
 
+    @Slot()
+    def on_calibration(self):
+        """Performs the series of measurements and exports them."""
+        # Mutual exclusion
+        if self._is_busy:
+            return
+
+        self._is_busy = True
+        self.controller.start()
+
+        # Initial stabilization
+        time.sleep(0.2)
+
+        for i in range(self.config.calibration_measurements):
+            try:
+                data = self.controller.get_scope_data()
+                x_data = np.arange(len(data))
+
+                # 1. Generate timestamp (Format: YYYYMMDD_HHMMSS)
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"{timestamp}_calibration_{i + 1}.txt"
+
+                # 2. Export the data
+                export_txt(data, self.config.calibration_output, filename)
+
+                # 3. Update the UI with the latest measurement
+                self.data_ready.emit(x_data, data)
+
+            except RuntimeError:
+                print(f"Calibration measurement {i + 1} failed.")
+
+            # Short delay between captures to allow hardware to reset
+            time.sleep(0.5)
+
+            # Process events to keep the thread responsive if we ever want to interrupt it
+            QCoreApplication.processEvents()
+
+        self.controller.stop()
+        self._is_busy = False
 
 def main():
     app = QApplication(sys.argv)
 
-    # 1. Instanciation des composants principaux
+    # 1. Main components instantiation
     config = AppConfig()
     controller = Controller()
 
-    # Initialisation du Hardware
+    # Hardware initialization
     controller.connect()
     controller.setup()
 
+    # --- Thread and Worker Management ---
     try:
         humidity_model = load_calibration_model()
         print(
@@ -87,48 +153,26 @@ def main():
         print(f"[humidity-runtime] disabled: {exc}")
 
     # Mise en place du Worker et du Thread
-    worker = AcquisitionWorker(controller, humidity_model=humidity_model)
+    worker = AcquisitionWorker(controller, humidity_model=humidity_model, config=config)
     thread = QThread()
     worker.moveToThread(thread)
 
-    # Fonctions encapsulées pour démarrer le hardware ET le thread
-    def start_acquisition():
-        thread.started.connect(worker.run)
-        controller.start()
-        worker.start_working()
-        if not thread.isRunning():
-            thread.start()
+    # Start the thread in the background once and for all.
+    thread.start()
 
-    def stop_acquisition():
-        worker.stop_working()
-        thread.quit()
-        thread.wait(100)  # Attente max de 100ms
-        controller.stop()
-
-    def single_acquisition():
-        thread.started.connect(worker.single_run)
-        controller.start()
-        worker.start_working()
-        if not thread.isRunning():
-            thread.start()
-
-        worker.stop_working()
-        thread.quit()
-        thread.wait(100)  # Attente max de 100ms
-        controller.stop()
-
-    # 2. Instanciation de l'UI (Maintenant très propre !)
+    # 2. UI Instantiation
     window = Window()
 
-    # 3. Câblage des Signaux (Architecture Orientée Événements)
+    # --- Direct Wiring: UI -> Worker ---
+    window.scope.start_requested.connect(worker.run_continuous)
+    window.scope.stop_requested.connect(worker.stop_working)
+    window.scope.single_start_requested.connect(worker.single_run)
+    window.scope.calibration_requested.connect(worker.on_calibration)
 
-    # -> Câblage du Scope
-    window.scope.start_requested.connect(start_acquisition)
-    window.scope.stop_requested.connect(stop_acquisition)
-    window.scope.single_start_requested.connect(single_acquisition)
+    # Standard wiring that remains in the main thread
     window.scope.export_requested.connect(export_txt)
 
-    # -> Câblage des Paramètres Scope
+    # -> Scope Parameters Wiring
     window.parameters.range_changed.connect(controller.set_scope_range)
     window.parameters.bandwidth_changed.connect(controller.set_scope_bandwidth)
     window.parameters.coupling_changed.connect(controller.set_scope_coupling)
@@ -139,7 +183,7 @@ def main():
     window.parameters.sample_rate_changed.connect(controller.set_scope_sample_rate)
     window.parameters.buffer_size_changed.connect(controller.set_scope_buffer_size)
 
-    # -> Câblage des Paramètres Wavegen
+    # -> Wavegen Parameters Wiring
     window.parameters.wavegen_function_changed.connect(controller.set_wavegen_function)
     window.parameters.wavegen_frequency_changed.connect(
         controller.set_wavegen_frequency
@@ -149,26 +193,27 @@ def main():
     )
     window.parameters.wavegen_offset_changed.connect(controller.set_wavegen_offset)
 
-    # -> Câblage des Paramètres de Gain
+    # -> Gain Parameters Wiring
     window.parameters.gain_a0_changed.connect(controller.set_gain_a0)
     window.parameters.gain_a1_changed.connect(controller.set_gain_a1)
     window.parameters.gain_a2_changed.connect(controller.set_gain_a2)
 
-    # -> Câblage du retour de données (Worker -> UI)
+    # -> Data feedback (Worker -> UI)
     worker.data_ready.connect(window.set_data)
     worker.analysis_ready.connect(window.set_analysis)
 
-    # 4. Initialisation en "Cascade"
-    # On applique la config à l'UI. L'UI met à jour ses widgets.
-    # Les widgets émettent leurs signaux qui configurent le Hardware via les connexions ci-dessus.
+    # 4. Cascade Initialization
     window.apply_config(config)
 
-    # Affichage
+    # Display
     window.show()
 
-    # Disconnect the controller when the application is closed
+    # Disconnect the controller and thread when the application is closed
     def on_quit():
-        stop_acquisition()
+        # Clean shutdown
+        worker.stop_working()
+        thread.quit()
+        thread.wait(500)
         controller.disconnect()
 
     app.aboutToQuit.connect(on_quit)

@@ -16,7 +16,8 @@ class Scope(QGroupBox):
     start_requested = Signal()
     stop_requested = Signal()
     single_start_requested = Signal()
-    export_requested = Signal(np.ndarray, str)
+    export_requested = Signal(np.ndarray, str, str)
+    calibration_requested = Signal()
     enable_trigger_requested = Signal()
     disable_trigger_requested = Signal()
 
@@ -32,6 +33,10 @@ class Scope(QGroupBox):
         self.single_start_btn = QPushButton("Single Start")
         # On émet directement le signal lors du clic
         self.single_start_btn.clicked.connect(self.single_start_requested.emit)
+
+        # Calibration Button
+        self.calibration_btn = QPushButton("Data Calibration")
+        self.calibration_btn.clicked.connect(self._on_calibration)
 
         # export button
         self.export_btn = QPushButton("Export as txt")
@@ -62,6 +67,7 @@ class Scope(QGroupBox):
         top_layout = QHBoxLayout()
         top_layout.addWidget(self.toggle_btn)
         top_layout.addWidget(self.single_start_btn)
+        top_layout.addWidget(self.calibration_btn)
         top_layout.addWidget(self.export_btn)
         top_layout.addWidget(self.export_filename)
         top_layout.addWidget(self.ha_label)
@@ -87,6 +93,7 @@ class Scope(QGroupBox):
 
             # disable single start
             self.single_start_btn.setEnabled(False)
+            self.calibration_btn.setEnabled(False)
             self.disable_trigger_requested.emit()
         else:
             self.toggle_btn.setText("Start")
@@ -94,6 +101,7 @@ class Scope(QGroupBox):
 
             # enable single start
             self.single_start_btn.setEnabled(True)
+            self.calibration_btn.setEnabled(True)
             self.enable_trigger_requested.emit()
 
     def _on_export(self):
@@ -102,15 +110,17 @@ class Scope(QGroupBox):
         name = self.export_filename.text() + ".txt"
 
         if data is not None:
-            # getData() renvoie un tuple (x, y), on le convertit en array comme dans ton code original
-
-            self.export_requested.emit(np.array(data)[1], name)
+            self.export_requested.emit(np.array(data)[1], ".", name)
         else:
             print("No data to export yet.")
 
     def set_data(self, x_data: np.ndarray, y_data: np.ndarray):
         """Update the displayed values on the scope."""
         self.curve.setData(x_data, y_data)
+
+    def _on_calibration(self):
+        if self.curve.getData() is not None:
+            self.calibration_requested.emit()
 
     def set_analysis(self, analysis: dict):
         """Update HA/feature labels and absorbance plot."""
