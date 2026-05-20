@@ -43,6 +43,21 @@ class AcquisitionWorker(QObject):
         # Short delay to let the instrument initialize
         time.sleep(0.1)
 
+        while self._is_running:
+            data = self.controller.get_scope_data()
+            self._emit_measurement(data)
+
+            # Short pause to prevent 100% CPU usage
+            time.sleep(0.01)
+
+            # CRITICAL FIX: Process events so the thread can receive the "stop_working" signal!
+            QCoreApplication.processEvents()
+
+        self.controller.stop()
+
+        # Free the worker for the next task
+        self._is_busy = False
+
     def _emit_measurement(self, data: np.ndarray):
         x_data = np.arange(len(data))
         self.data_ready.emit(x_data, data)
@@ -60,25 +75,6 @@ class AcquisitionWorker(QObject):
         except Exception as exc:
             # Le scope doit continuer a vivre meme si l'analyse echoue.
             print(f"[humidity-runtime] analysis failed: {exc}")
-
-    def run(self):
-        while self._is_running:
-            try:
-                data = self.controller.get_scope_data()
-                self._emit_measurement(data)
-            except RuntimeError:
-                pass  # Ignore if device is not ready yet
-
-            # Short pause to prevent 100% CPU usage
-            time.sleep(0.01)
-
-            # CRITICAL FIX: Process events so the thread can receive the "stop_working" signal!
-            QCoreApplication.processEvents()
-
-        self.controller.stop()
-
-        # Free the worker for the next task
-        self._is_busy = False
 
     @Slot()
     def stop_working(self):
