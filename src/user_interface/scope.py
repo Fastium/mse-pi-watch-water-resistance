@@ -62,6 +62,13 @@ class Scope(QGroupBox):
             return np.array(data)[1]
         return None
 
+    def get_abs_current_data(self):
+        """Helper to get current absorbance data for export."""
+        data = self.abs_curve.getData()
+        if data is not None and len(data[1]) > 0:
+            return np.array(data)[1]
+        return None
+
     def get_ha_export_data(self):
         """Returns the HA data formatted as lines for txt export."""
         return self.ha_export_data

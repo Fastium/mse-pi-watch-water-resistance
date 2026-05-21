@@ -55,16 +55,32 @@ def main():
     window.actions_panel.calibration_requested.connect(worker.on_calibration)
 
     # -> Export wiring (custom function to get data from scope)
-    def handle_export_scope(filename):
+    def handle_export_scope():
         data = window.scope.get_current_data()
         if data is not None:
+            # Génération du nom de fichier horodaté
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"measure_{timestamp}_scope.txt"
             export_txt(data, ".", filename)
         else:
             print("No data to export yet.")
 
-    def handle_export_ha(filename):
+    def handle_export_abs():
+        data = window.scope.get_abs_current_data()
+        if data is not None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"measure_{timestamp}_absorbance.txt"
+            export_txt(data, ".", filename)
+        else:
+            print("No absorbance data to export yet.")
+
+    def handle_export_ha():
         data_lines = window.scope.get_ha_export_data()
         if data_lines:
+            # Génération du nom de fichier horodaté
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"measure_{timestamp}_HA.txt"
+
             header = "Timestamp, Relative_Time_s, Absolute_Humidity"
             export_csv_lines(header, data_lines, ".", filename)
         else:
@@ -72,6 +88,7 @@ def main():
 
     window.actions_panel.export_requested.connect(handle_export_scope)
     window.actions_panel.export_ha_requested.connect(handle_export_ha)
+    window.actions_panel.export_abs_requested.connect(handle_export_abs)
 
     # -> Scope Parameters Wiring
     window.parameters.range_changed.connect(controller.set_scope_range)
