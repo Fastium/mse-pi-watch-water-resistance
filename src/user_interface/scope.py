@@ -16,6 +16,7 @@ class Scope(QGroupBox):
     start_requested = Signal()
     stop_requested = Signal()
     single_start_requested = Signal()
+    reset_plot_requested = Signal()
     export_requested = Signal(np.ndarray, str, str)
     calibration_requested = Signal()
     enable_trigger_requested = Signal()
@@ -28,6 +29,10 @@ class Scope(QGroupBox):
         self.toggle_btn = QPushButton("Start")
         self.toggle_btn.setCheckable(True)
         self.toggle_btn.toggled.connect(self._on_toggle)
+
+        # Setup reset button (entre Start et Single Start)
+        self.reset_btn = QPushButton("Reset Plot")
+        self.reset_btn.clicked.connect(self.reset_plot_requested.emit)
 
         # setup single start button
         self.single_start_btn = QPushButton("Single Start")
@@ -66,6 +71,7 @@ class Scope(QGroupBox):
         # Top layout for the button (aligned left)
         top_layout = QHBoxLayout()
         top_layout.addWidget(self.toggle_btn)
+        top_layout.addWidget(self.reset_btn)
         top_layout.addWidget(self.single_start_btn)
         top_layout.addWidget(self.calibration_btn)
         top_layout.addWidget(self.export_btn)
