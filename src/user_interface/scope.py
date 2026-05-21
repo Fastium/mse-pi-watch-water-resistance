@@ -29,14 +29,18 @@ class Scope(QGroupBox):
         # 3. Setup HA plot (Right column)
         self.ha_averaging_window = config.ha_averaging_window
         self.ha_accumulator = []
+        self.ha_timestamp_accumulator = []  # Pour moyenner aussi le temps
+
         self.ha_x_data = []
         self.ha_y_data = []
-        self.ha_current_x = 0
+        self.ha_start_time = None  # Garde en mémoire le t=0
 
         self.ha_graph = pg.PlotWidget(title="Real-time Absolute Humidity (HA)")
         self.ha_graph.showGrid(x=True, y=True, alpha=0.3)
         self.ha_graph.setLabel("left", "Absolute Humidity", units="g/m³")
-        self.ha_graph.setLabel("bottom", "Samples (Averaged)")
+        self.ha_graph.setLabel(
+            "bottom", "Time", units="s"
+        )  # Unité modifiée en secondes
         self.ha_curve = self.ha_graph.plot(pen=pg.mkPen("#00ff00", width=2))
 
         # Assemble layouts
@@ -57,11 +61,12 @@ class Scope(QGroupBox):
         return None
 
     def reset_ha_plot(self):
-        """Clears the HA plot data and buffers."""
+        """Clears the HA plot data and buffers. Resets the time to 0."""
         self.ha_accumulator.clear()
+        self.ha_timestamp_accumulator.clear()
         self.ha_x_data.clear()
         self.ha_y_data.clear()
-        self.ha_current_x = 0
+        self.ha_start_time = None
         self.ha_curve.setData(self.ha_x_data, self.ha_y_data)
 
     def set_analysis(self, analysis: dict):
@@ -75,14 +80,27 @@ class Scope(QGroupBox):
             self.abs_curve.setData([], [])
 
         ha_pred = analysis.get("HA_pred")
-        if ha_pred is not None:
-            self.ha_accumulator.append(float(ha_pred))
-            if len(self.ha_accumulator) >= self.ha_averaging_window:
-                avg_ha = sum(self.ha_accumulator) / len(self.ha_accumulator)
-                self.ha_accumulator.clear()
+        current_time = analysis.get("timestamp")
 
-                self.ha_x_data.append(self.ha_current_x)
+        if ha_pred is not None and current_time is not None:
+            # Initialisation du t=0 au premier point reçu après un reset
+            if self.ha_start_time is None:
+                self.ha_start_time = current_time
+
+            self.ha_accumulator.append(float(ha_pred))
+            self.ha_timestamp_accumulator.append(current_time)
+
+            if len(self.ha_accumulator) >= self.ha_averaging_window:
+                # Moyenne de l'humidité
+                avg_ha = sum(self.ha_accumulator) / len(self.ha_accumulator)
+
+                # Le temps X sera le temps du dernier point de la fenêtre, par rapport au start_time
+                relative_time_s = self.ha_timestamp_accumulator[-1] - self.ha_start_time
+
+                self.ha_accumulator.clear()
+                self.ha_timestamp_accumulator.clear()
+
+                self.ha_x_data.append(relative_time_s)
                 self.ha_y_data.append(avg_ha)
-                self.ha_current_x += 1
 
                 self.ha_curve.setData(self.ha_x_data, self.ha_y_data)
