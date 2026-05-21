@@ -49,10 +49,10 @@ def main():
     window = Window(config)
 
     # --- Direct Wiring: UI -> Worker ---
-    window.actions.start_requested.connect(worker.run_continuous)
-    window.actions.stop_requested.connect(worker.stop_working)
-    window.actions.single_start_requested.connect(worker.single_run)
-    window.actions.calibration_requested.connect(worker.on_calibration)
+    window.actions_panel.start_requested.connect(worker.run_continuous)
+    window.actions_panel.stop_requested.connect(worker.stop_working)
+    window.actions_panel.single_start_requested.connect(worker.single_run)
+    window.actions_panel.calibration_requested.connect(worker.on_calibration)
 
     # -> Export wiring (custom function to get data from scope)
     def handle_export(filename):
@@ -62,7 +62,7 @@ def main():
         else:
             print("No data to export yet.")
 
-    window.actions.export_requested.connect(handle_export)
+    window.actions_panel.export_requested.connect(handle_export)
 
     # -> Scope Parameters Wiring
     window.parameters.range_changed.connect(controller.set_scope_range)
@@ -94,11 +94,11 @@ def main():
     worker.data_ready.connect(window.scope.set_data)
 
     # Analysis feedback to Labels AND Graphs
-    worker.analysis_ready.connect(window.actions.set_analysis_labels)
+    worker.analysis_ready.connect(window.actions_panel.set_analysis_labels)
     worker.analysis_ready.connect(window.scope.set_analysis)
 
     # -> Real-time plot reset wiring
-    window.actions.reset_plot_requested.connect(window.scope.reset_ha_plot)
+    window.actions_panel.reset_plot_requested.connect(window.scope.reset_ha_plot)
 
     # Display
     window.show()
