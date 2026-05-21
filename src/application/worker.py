@@ -88,8 +88,27 @@ class AcquisitionWorker(QObject):
 
     @Slot()
     def single_run(self):
+        """Performs a single acquisition."""
+        # Mutual exclusion
+        if self._is_busy:
+            return
+
+        self._is_busy = True
+
+        # 1. Start the generator
+        self.controller.start()
+
+        # 2. Wait for hardware to generate the wave and stabilize
+        time.sleep(0.1)
+
+        # 3. Capture the synchronized data
         data = self.controller.get_scope_data()
         self._emit_measurement(data)
+
+        # 4. Stop the generator
+        self.controller.stop()
+
+        self._is_busy = False
 
     @Slot()
     def on_calibration(self):
