@@ -54,11 +54,6 @@ def main():
     window.scope.single_start_requested.connect(worker.single_run)
     window.scope.calibration_requested.connect(worker.on_calibration)
 
-    # -> Real-time plot reset wiring
-    # Ensures the HA graph is cleared whenever a new continuous or single acquisition begins.
-    window.scope.start_requested.connect(window.humidity_plot.reset_plot)
-    window.scope.single_start_requested.connect(window.humidity_plot.reset_plot)
-
     # Standard wiring that remains in the main thread
     window.scope.export_requested.connect(export_txt)
 
@@ -96,10 +91,8 @@ def main():
     worker.analysis_ready.connect(window.scope.set_analysis)
     worker.analysis_ready.connect(window.humidity_plot.set_analysis)
 
-    # -> Real-time plot reset wiring
-    # Ensures the HA graph is cleared whenever a new continuous or single acquisition begins.
-    window.scope.start_requested.connect(window.humidity_plot.reset_plot)
-    window.scope.single_start_requested.connect(window.humidity_plot.reset_plot)
+    # Real-time plot reset wiring
+    window.scope.reset_plot_requested.connect(window.humidity_plot.reset_plot)
 
     # Display
     window.show()
