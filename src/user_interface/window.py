@@ -25,9 +25,9 @@ class Window(QMainWindow):
 
         # Left Column : Actions (Top) + Scope/Graphs (Bottom)
         left_layout = QVBoxLayout()
-        self.actions = ActionsPanel()
+        self.actions_panel = ActionsPanel()
         self.scope = Scope(config)
-        left_layout.addWidget(self.actions, stretch=0)
+        left_layout.addWidget(self.actions_panel, stretch=0)
         left_layout.addWidget(self.scope, stretch=1)
 
         # Right Column : Parameters
