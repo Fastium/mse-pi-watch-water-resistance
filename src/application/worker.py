@@ -70,6 +70,12 @@ class AcquisitionWorker(QObject):
                 model=self.humidity_model,
                 path_length=self.path_length,
             )
+
+            # Add full datetime string for future export
+            analysis["timestamp_str"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Add raw unix timestamp (in seconds) for plotting
+            analysis["timestamp"] = time.time()
+
             self.analysis_ready.emit(analysis)
         except Exception as exc:
             # Le scope doit continuer a vivre meme si l'analyse echoue.
