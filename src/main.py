@@ -49,13 +49,20 @@ def main():
     window = Window(config)
 
     # --- Direct Wiring: UI -> Worker ---
-    window.scope.start_requested.connect(worker.run_continuous)
-    window.scope.stop_requested.connect(worker.stop_working)
-    window.scope.single_start_requested.connect(worker.single_run)
-    window.scope.calibration_requested.connect(worker.on_calibration)
+    window.actions.start_requested.connect(worker.run_continuous)
+    window.actions.stop_requested.connect(worker.stop_working)
+    window.actions.single_start_requested.connect(worker.single_run)
+    window.actions.calibration_requested.connect(worker.on_calibration)
 
-    # Standard wiring that remains in the main thread
-    window.scope.export_requested.connect(export_txt)
+    # -> Export wiring (custom function to get data from scope)
+    def handle_export(filename):
+        data = window.scope.get_current_data()
+        if data is not None:
+            export_txt(data, ".", filename)
+        else:
+            print("No data to export yet.")
+
+    window.actions.export_requested.connect(handle_export)
 
     # -> Scope Parameters Wiring
     window.parameters.range_changed.connect(controller.set_scope_range)
@@ -84,15 +91,14 @@ def main():
     window.parameters.gain_a2_changed.connect(controller.set_gain_a2)
 
     # -> Data feedback (Worker -> UI)
-    # The worker sends data arrays directly to the scope graph
     worker.data_ready.connect(window.scope.set_data)
 
-    # The worker sends the analysis dict to BOTH the scope and the new HA plot
+    # Analysis feedback to Labels AND Graphs
+    worker.analysis_ready.connect(window.actions.set_analysis_labels)
     worker.analysis_ready.connect(window.scope.set_analysis)
-    worker.analysis_ready.connect(window.humidity_plot.set_analysis)
 
-    # Real-time plot reset wiring
-    window.scope.reset_plot_requested.connect(window.humidity_plot.reset_plot)
+    # -> Real-time plot reset wiring
+    window.actions.reset_plot_requested.connect(window.scope.reset_ha_plot)
 
     # Display
     window.show()

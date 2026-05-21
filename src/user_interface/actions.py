@@ -1,0 +1,102 @@
+# src/user_interface/actions.py
+import numpy as np
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import (
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+)
+
+
+class ActionsPanel(QGroupBox):
+    # --- Déclaration des Signaux ---
+    start_requested = Signal()
+    stop_requested = Signal()
+    single_start_requested = Signal()
+    reset_plot_requested = Signal()
+    export_requested = Signal(str)  # Modifié pour n'envoyer que le nom de fichier
+    calibration_requested = Signal()
+    enable_trigger_requested = Signal()
+    disable_trigger_requested = Signal()
+
+    def __init__(self):
+        super().__init__("Controls")
+
+        layout = QHBoxLayout()
+
+        # Setup the toggle button
+        self.toggle_btn = QPushButton("Start")
+        self.toggle_btn.setCheckable(True)
+        self.toggle_btn.toggled.connect(self._on_toggle)
+        layout.addWidget(self.toggle_btn)
+
+        # Setup reset button
+        self.reset_btn = QPushButton("Reset Plot")
+        self.reset_btn.clicked.connect(self.reset_plot_requested.emit)
+        layout.addWidget(self.reset_btn)
+
+        # setup single start button
+        self.single_start_btn = QPushButton("Single Start")
+        self.single_start_btn.clicked.connect(self.single_start_requested.emit)
+        layout.addWidget(self.single_start_btn)
+
+        # Calibration Button
+        self.calibration_btn = QPushButton("Data Calibration")
+        self.calibration_btn.clicked.connect(self.calibration_requested.emit)
+        layout.addWidget(self.calibration_btn)
+
+        # export button
+        self.export_btn = QPushButton("Export as txt")
+        self.export_btn.clicked.connect(self._on_export)
+        layout.addWidget(self.export_btn)
+
+        # export filename
+        self.export_filename = QLineEdit()
+        self.export_filename.setText("measure")
+        layout.addWidget(self.export_filename)
+
+        # runtime analysis labels
+        self.ha_label = QLabel("HA: --")
+        layout.addWidget(self.ha_label)
+
+        self.feature_label = QLabel("Feature: --")
+        layout.addWidget(self.feature_label)
+
+        layout.addStretch()
+        self.setLayout(layout)
+
+    def _on_toggle(self, checked: bool):
+        if checked:
+            self.toggle_btn.setText("Stop")
+            self.start_requested.emit()
+            self.single_start_btn.setEnabled(False)
+            self.calibration_btn.setEnabled(False)
+            self.disable_trigger_requested.emit()
+        else:
+            self.toggle_btn.setText("Start")
+            self.stop_requested.emit()
+            self.single_start_btn.setEnabled(True)
+            self.calibration_btn.setEnabled(True)
+            self.enable_trigger_requested.emit()
+
+    def _on_export(self):
+        name = self.export_filename.text() + ".txt"
+        self.export_requested.emit(name)
+
+    def set_analysis_labels(self, analysis: dict):
+        """Update HA/feature labels from the analysis dict."""
+        ha_pred = analysis.get("HA_pred")
+        feature_name = analysis.get("feature_name", "--")
+        feature_value = analysis.get("feature_value")
+
+        if ha_pred is None:
+            self.ha_label.setText("HA: --")
+        else:
+            self.ha_label.setText(f"HA: {float(ha_pred):.3f} g/m3")
+
+        if feature_value is None:
+            self.feature_label.setText(f"{feature_name}: --")
+        else:
+            self.feature_label.setText(f"{feature_name}: {float(feature_value):.5f}")
