@@ -29,3 +29,6 @@ class AppConfig:
     gain_a0: bool = False
     gain_a1: bool = False
     gain_a2: bool = False
+
+    # HA Plot Configuration
+    ha_averaging_window: int = 5

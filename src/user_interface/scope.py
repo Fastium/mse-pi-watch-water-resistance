@@ -22,7 +22,7 @@ class Scope(QGroupBox):
     disable_trigger_requested = Signal()
 
     def __init__(self):
-        super().__init__()
+        super().__init__("Data acquisition")
 
         # Setup the toggle button (top-left)
         self.toggle_btn = QPushButton("Start")
@@ -137,9 +137,7 @@ class Scope(QGroupBox):
         if feature_value is None:
             self.feature_label.setText(f"{feature_name}: --")
         else:
-            self.feature_label.setText(
-                f"{feature_name}: {float(feature_value):.5f}"
-            )
+            self.feature_label.setText(f"{feature_name}: {float(feature_value):.5f}")
 
         if absorbance is None:
             self.abs_curve.setData([], [])
