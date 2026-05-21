@@ -5,7 +5,6 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QPushButton,
 )
 
@@ -16,8 +15,9 @@ class ActionsPanel(QGroupBox):
     stop_requested = Signal()
     single_start_requested = Signal()
     reset_plot_requested = Signal()
-    export_requested = Signal(str)
-    export_ha_requested = Signal(str)  # <-- Nouveau signal pour HA
+    export_requested = Signal()
+    export_abs_requested = Signal()  # <-- Nouveau signal pour Absorbance
+    export_ha_requested = Signal()
     calibration_requested = Signal()
     enable_trigger_requested = Signal()
     disable_trigger_requested = Signal()
@@ -50,18 +50,18 @@ class ActionsPanel(QGroupBox):
 
         # export button (Scope)
         self.export_btn = QPushButton("Export Scope")
-        self.export_btn.clicked.connect(self._on_export)
+        self.export_btn.clicked.connect(self.export_requested.emit)
         layout.addWidget(self.export_btn)
+
+        # export button (Absorbance)
+        self.export_abs_btn = QPushButton("Export Absorbance")
+        self.export_abs_btn.clicked.connect(self.export_abs_requested.emit)
+        layout.addWidget(self.export_abs_btn)
 
         # export button (HA)
         self.export_ha_btn = QPushButton("Export HA Plot")
-        self.export_ha_btn.clicked.connect(self._on_export_ha)
+        self.export_ha_btn.clicked.connect(self.export_ha_requested.emit)
         layout.addWidget(self.export_ha_btn)
-
-        # export filename
-        self.export_filename = QLineEdit()
-        self.export_filename.setText("measure")
-        layout.addWidget(self.export_filename)
 
         # runtime analysis labels
         self.ha_label = QLabel("HA: --")
@@ -87,17 +87,8 @@ class ActionsPanel(QGroupBox):
             self.calibration_btn.setEnabled(True)
             self.enable_trigger_requested.emit()
 
-    def _on_export(self):
-        name = self.export_filename.text() + "_scope.txt"
-        self.export_requested.emit(name)
-
-    def _on_export_ha(self):
-        name = self.export_filename.text() + "_HA.txt"
-        self.export_ha_requested.emit(name)
-
     def set_analysis_labels(self, analysis: dict):
         """Update HA/feature labels from the analysis dict."""
-        # (Le reste reste inchangé)
         ha_pred = analysis.get("HA_pred")
         feature_name = analysis.get("feature_name", "--")
         feature_value = analysis.get("feature_value")
