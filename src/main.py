@@ -12,7 +12,7 @@ from application.config import AppConfig
 from application.worker import AcquisitionWorker
 from middleware.controller import Controller
 from user_interface.window import Window
-from utils.file_utils import export_txt
+from utils.file_utils import export_csv_lines, export_txt
 
 
 def main():
@@ -55,14 +55,23 @@ def main():
     window.actions_panel.calibration_requested.connect(worker.on_calibration)
 
     # -> Export wiring (custom function to get data from scope)
-    def handle_export(filename):
+    def handle_export_scope(filename):
         data = window.scope.get_current_data()
         if data is not None:
             export_txt(data, ".", filename)
         else:
             print("No data to export yet.")
 
-    window.actions_panel.export_requested.connect(handle_export)
+    def handle_export_ha(filename):
+        data_lines = window.scope.get_ha_export_data()
+        if data_lines:
+            header = "Timestamp, Relative_Time_s, Absolute_Humidity"
+            export_csv_lines(header, data_lines, ".", filename)
+        else:
+            print("No HA data to export yet.")
+
+    window.actions_panel.export_requested.connect(handle_export_scope)
+    window.actions_panel.export_ha_requested.connect(handle_export_ha)
 
     # -> Scope Parameters Wiring
     window.parameters.range_changed.connect(controller.set_scope_range)

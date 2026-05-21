@@ -29,11 +29,13 @@ class Scope(QGroupBox):
         # 3. Setup HA plot (Right column)
         self.ha_averaging_window = config.ha_averaging_window
         self.ha_accumulator = []
-        self.ha_timestamp_accumulator = []  # Pour moyenner aussi le temps
+        self.ha_timestamp_accumulator = []
 
         self.ha_x_data = []
         self.ha_y_data = []
-        self.ha_start_time = None  # Garde en mémoire le t=0
+        self.ha_start_time = None
+
+        self.ha_export_data = []
 
         self.ha_graph = pg.PlotWidget(title="Real-time Absolute Humidity (HA)")
         self.ha_graph.showGrid(x=True, y=True, alpha=0.3)
@@ -60,6 +62,10 @@ class Scope(QGroupBox):
             return np.array(data)[1]
         return None
 
+    def get_ha_export_data(self):
+        """Returns the HA data formatted as lines for txt export."""
+        return self.ha_export_data
+
     def reset_ha_plot(self):
         """Clears the HA plot data and buffers. Resets the time to 0."""
         self.ha_accumulator.clear()
@@ -67,6 +73,7 @@ class Scope(QGroupBox):
         self.ha_x_data.clear()
         self.ha_y_data.clear()
         self.ha_start_time = None
+        self.ha_export_data.clear()  # <-- Ne pas oublier de vider ici
         self.ha_curve.setData(self.ha_x_data, self.ha_y_data)
 
     def set_analysis(self, analysis: dict):
@@ -81,9 +88,11 @@ class Scope(QGroupBox):
 
         ha_pred = analysis.get("HA_pred")
         current_time = analysis.get("timestamp")
+        timestamp_str = analysis.get(
+            "timestamp_str"
+        )  # <-- Récupération du timestamp formatté
 
         if ha_pred is not None and current_time is not None:
-            # Initialisation du t=0 au premier point reçu après un reset
             if self.ha_start_time is None:
                 self.ha_start_time = current_time
 
@@ -91,10 +100,7 @@ class Scope(QGroupBox):
             self.ha_timestamp_accumulator.append(current_time)
 
             if len(self.ha_accumulator) >= self.ha_averaging_window:
-                # Moyenne de l'humidité
                 avg_ha = sum(self.ha_accumulator) / len(self.ha_accumulator)
-
-                # Le temps X sera le temps du dernier point de la fenêtre, par rapport au start_time
                 relative_time_s = self.ha_timestamp_accumulator[-1] - self.ha_start_time
 
                 self.ha_accumulator.clear()
@@ -102,5 +108,10 @@ class Scope(QGroupBox):
 
                 self.ha_x_data.append(relative_time_s)
                 self.ha_y_data.append(avg_ha)
+
+                # --- Enregistrement de la ligne pour l'export ---
+                # Format: "YYYY-MM-DD HH:MM:SS, temps_relatif_s, HA_valeur"
+                export_line = f"{timestamp_str}, {relative_time_s:.2f}, {avg_ha:.5f}"
+                self.ha_export_data.append(export_line)
 
                 self.ha_curve.setData(self.ha_x_data, self.ha_y_data)

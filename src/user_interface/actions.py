@@ -16,7 +16,8 @@ class ActionsPanel(QGroupBox):
     stop_requested = Signal()
     single_start_requested = Signal()
     reset_plot_requested = Signal()
-    export_requested = Signal(str)  # Modifié pour n'envoyer que le nom de fichier
+    export_requested = Signal(str)
+    export_ha_requested = Signal(str)  # <-- Nouveau signal pour HA
     calibration_requested = Signal()
     enable_trigger_requested = Signal()
     disable_trigger_requested = Signal()
@@ -47,10 +48,15 @@ class ActionsPanel(QGroupBox):
         self.calibration_btn.clicked.connect(self.calibration_requested.emit)
         layout.addWidget(self.calibration_btn)
 
-        # export button
-        self.export_btn = QPushButton("Export as txt")
+        # export button (Scope)
+        self.export_btn = QPushButton("Export Scope")
         self.export_btn.clicked.connect(self._on_export)
         layout.addWidget(self.export_btn)
+
+        # export button (HA)
+        self.export_ha_btn = QPushButton("Export HA Plot")
+        self.export_ha_btn.clicked.connect(self._on_export_ha)
+        layout.addWidget(self.export_ha_btn)
 
         # export filename
         self.export_filename = QLineEdit()
@@ -82,11 +88,16 @@ class ActionsPanel(QGroupBox):
             self.enable_trigger_requested.emit()
 
     def _on_export(self):
-        name = self.export_filename.text() + ".txt"
+        name = self.export_filename.text() + "_scope.txt"
         self.export_requested.emit(name)
+
+    def _on_export_ha(self):
+        name = self.export_filename.text() + "_HA.txt"
+        self.export_ha_requested.emit(name)
 
     def set_analysis_labels(self, analysis: dict):
         """Update HA/feature labels from the analysis dict."""
+        # (Le reste reste inchangé)
         ha_pred = analysis.get("HA_pred")
         feature_name = analysis.get("feature_name", "--")
         feature_value = analysis.get("feature_value")
