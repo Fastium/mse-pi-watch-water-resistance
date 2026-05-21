@@ -2,11 +2,12 @@
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QMainWindow,
+    QVBoxLayout,
     QWidget,
 )
 
 from application.config import AppConfig
-from user_interface.humidity_plot import HumidityPlotPanel
+from user_interface.actions import ActionsPanel
 from user_interface.parameters import ParametersPanel
 from user_interface.scope import Scope
 
@@ -16,21 +17,25 @@ class Window(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Scope Application")
-        self.resize(1500, 600)  # Increased width to fit the new panel
+        self.resize(1600, 800)
 
         # Setup main widget and layout
         central_widget = QWidget()
-        main_layout = QHBoxLayout()  # Horizontal
+        main_layout = QHBoxLayout()  # Principal Horizontal
 
-        # Instantiate panels directly with config
+        # Left Column : Actions (Top) + Scope/Graphs (Bottom)
+        left_layout = QVBoxLayout()
+        self.actions = ActionsPanel()
+        self.scope = Scope(config)
+        left_layout.addWidget(self.actions, stretch=0)
+        left_layout.addWidget(self.scope, stretch=1)
+
+        # Right Column : Parameters
         self.parameters = ParametersPanel(config)
-        self.scope = Scope()
-        self.humidity_plot = HumidityPlotPanel(config)
 
-        # Add widgets to layout
+        # Add everything to main layout
+        main_layout.addLayout(left_layout, stretch=4)
         main_layout.addWidget(self.parameters, stretch=1)
-        main_layout.addWidget(self.scope, stretch=3)
-        main_layout.addWidget(self.humidity_plot, stretch=3)
 
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
