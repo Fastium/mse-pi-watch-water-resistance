@@ -126,7 +126,8 @@ class AcquisitionWorker(QObject):
         for i in range(self.config.calibration_measurements):
             try:
                 data = self.controller.get_scope_data()
-                x_data = np.arange(len(data))
+
+                self._emit_measurement(data)
 
                 # 1. Generate timestamp (Format: YYYYMMDD_HHMMSS)
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -134,9 +135,6 @@ class AcquisitionWorker(QObject):
 
                 # 2. Export the data
                 export_txt(data, self.config.calibration_output, filename)
-
-                # 3. Update the UI with the latest measurement
-                self.data_ready.emit(x_data, data)
 
             except RuntimeError:
                 print(f"Calibration measurement {i + 1} failed.")
