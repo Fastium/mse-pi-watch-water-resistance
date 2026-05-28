@@ -1048,14 +1048,20 @@ def fit_linear_model(
 
 
 def metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
-    """Metriques de performance: RMSE, MAE, R2."""
+    """Metriques de performance: RMSE, MAE, MAPE, R2."""
     err = y_true - y_pred
     mse = float(np.mean(err**2))
     rmse = float(np.sqrt(mse))
     mae = float(np.mean(np.abs(err)))
+    denom = np.abs(y_true)
+    valid = denom > 1e-12
+    if np.any(valid):
+        mape_pct = float(np.mean(np.abs(err[valid]) / denom[valid]) * 100.0)
+    else:
+        mape_pct = float("nan")
     den = float(np.sum((y_true - np.mean(y_true)) ** 2))
     r2 = float(1 - np.sum(err**2) / den) if den > 0 else float("nan")
-    return {"rmse": rmse, "mae": mae, "r2": r2}
+    return {"rmse": rmse, "mae": mae, "mape_pct": mape_pct, "r2": r2}
 
 
 def make_blocked_balanced_split(
@@ -1538,9 +1544,23 @@ def main(
         match_axis_label = "Offset applied to scan timestamps (s)"
         match_title = "Time-offset search for scan-button matching"
 
-    best_feature_row = corr_final.iloc[
-        corr_final["corr_HA"].abs().fillna(-np.inf).idxmax()
-    ]
+    corr_abs = corr_final["corr_HA"].abs().fillna(-np.inf)
+    corr_max = float(corr_abs.max())
+    best_candidates = corr_final.loc[np.isclose(corr_abs, corr_max, atol=1e-12)].copy()
+    preferred_feature_order = ["F_area_total", "F_mean"]
+    if len(best_candidates) > 1:
+        # En cas d'egalite numerique, on prefere F_area_total pour garder
+        # une selection stable et plus lisible physiquement dans le rapport.
+        best_candidates["tie_rank"] = best_candidates["feature"].map(
+            {
+                feature_name: rank
+                for rank, feature_name in enumerate(preferred_feature_order)
+            }
+        ).fillna(len(preferred_feature_order))
+        best_candidates = best_candidates.sort_values(
+            ["tie_rank", "feature"], kind="stable"
+        )
+    best_feature_row = best_candidates.iloc[0]
     best_feature = str(best_feature_row["feature"])
 
     calib_metrics, calib_pred, selected_model_name, selected_holdout_split = run_calibration(

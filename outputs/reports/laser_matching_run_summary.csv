@@ -1,2 +1,2 @@
-dataset_name,data_dir,button_path,summary_path,n_scans,n_button_rows,n_summary_rows,best_match_value,summary_validated_shift,summary_corr_absorbance,summary_pairs,final_method,final_pairs,best_feature,best_corr_HA,best_corr_Abs
-current_calibration,/Users/valonmehmeti/hesso/PI/data/raw/calibration,/Users/valonmehmeti/hesso/PI/data/raw/calibration/button-test-1.xls,,1200,543,0,32331,0,,0,time_offset_search,341,F_area_total,0.9954056219838606,
+data_dir,button_path,summary_path,n_scans,n_button_rows,n_summary_rows,button_period_s,aggregation_half_window_s,best_match_value,summary_validated_shift,summary_corr_absorbance,summary_pairs,final_method,final_pairs,best_feature,best_corr_HA,best_corr_Abs,calibration_model,holdout_split,use_temperature
+data/raw/calibration,data/raw/calibration/button-test-1.xls,,1200,543,0,2.0,1.0,32331,0,,0,time_offset_search,341,F_area_total,0.9954038178839278,,HA ~ feature,test_30_blocked_balanced,False

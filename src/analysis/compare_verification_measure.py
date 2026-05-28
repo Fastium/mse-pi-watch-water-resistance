@@ -138,6 +138,7 @@ def build_metrics(aligned: pd.DataFrame, button_period_s: float, half_window_s: 
         "n_pairs": len(aligned),
         "rmse": m["rmse"],
         "mae": m["mae"],
+        "mape_pct": m["mape_pct"],
         "r2": m["r2"],
         "corr_pearson": corr,
         "bias_mean": float(np.mean(y_pred - y_true)),
