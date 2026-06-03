@@ -14,7 +14,7 @@ class Scope(QGroupBox):
         main_layout = QHBoxLayout()
         left_layout = QVBoxLayout()
 
-        # 1. Setup scope graph (Left column, Top)
+        # Setup scope graph
         self.graph = pg.PlotWidget(title="Scope")
         self.graph.showGrid(x=True, y=True, alpha=0.3)
         self.graph.setLabel("left", "Voltage", units="V")
@@ -22,7 +22,7 @@ class Scope(QGroupBox):
         self.curve = self.graph.plot(pen="y")
         left_layout.addWidget(self.graph)
 
-        # 2. Setup absorbance graph (Left column, Bottom)
+        # Setup absorbance graph
         self.abs_graph = pg.PlotWidget(title="Absorbance A(t)")
         self.abs_graph.showGrid(x=True, y=True, alpha=0.3)
         self.abs_graph.setLabel("left", "Absorbance", units="a.u.")
@@ -30,7 +30,7 @@ class Scope(QGroupBox):
         self.abs_curve = self.abs_graph.plot(pen=pg.mkPen("#ff8c00", width=2))
         left_layout.addWidget(self.abs_graph)
 
-        # 3. Setup HA plot (Right column)
+        # Setup HA plot
         self.ha_averaging_window = config.ha_averaging_window
         self.ha_accumulator = []
         self.ha_timestamp_accumulator = []
@@ -44,9 +44,7 @@ class Scope(QGroupBox):
         self.ha_graph = pg.PlotWidget(title="Real-time Absolute Humidity (HA)")
         self.ha_graph.showGrid(x=True, y=True, alpha=0.3)
         self.ha_graph.setLabel("left", "Absolute Humidity", units="g/m³")
-        self.ha_graph.setLabel(
-            "bottom", "Time", units="s"
-        )  # Unité modifiée en secondes
+        self.ha_graph.setLabel("bottom", "Time", units="s")
         self.ha_curve = self.ha_graph.plot(pen=pg.mkPen("#00ff00", width=2))
 
         # Assemble layouts
@@ -84,7 +82,7 @@ class Scope(QGroupBox):
         self.ha_x_data.clear()
         self.ha_y_data.clear()
         self.ha_start_time = None
-        self.ha_export_data.clear()  # <-- Ne pas oublier de vider ici
+        self.ha_export_data.clear()
         self.ha_curve.setData(self.ha_x_data, self.ha_y_data)
 
     def set_analysis(self, analysis: dict):
@@ -99,9 +97,7 @@ class Scope(QGroupBox):
 
         ha_pred = analysis.get("HA_pred")
         current_time = analysis.get("timestamp")
-        timestamp_str = analysis.get(
-            "timestamp_str"
-        )  # <-- Récupération du timestamp formatté
+        timestamp_str = analysis.get("timestamp_str")
 
         if ha_pred is not None and current_time is not None:
             if self.ha_start_time is None:
@@ -120,8 +116,7 @@ class Scope(QGroupBox):
                 self.ha_x_data.append(relative_time_s)
                 self.ha_y_data.append(avg_ha)
 
-                # --- Enregistrement de la ligne pour l'export ---
-                # Format: "YYYY-MM-DD HH:MM:SS, temps_relatif_s, HA_valeur"
+                # Format: "YYYY-MM-DD HH:MM:SS, time_relatif_s, HA_value"
                 export_line = f"{timestamp_str}, {relative_time_s:.2f}, {avg_ha:.5f}"
                 self.ha_export_data.append(export_line)
 

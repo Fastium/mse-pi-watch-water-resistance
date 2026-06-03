@@ -4,7 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class AppConfig:
     # Enable mock for simulation
-    simulation = False
+    simulation = True
 
     # Calibration
     calibration_measurements: int = 100
