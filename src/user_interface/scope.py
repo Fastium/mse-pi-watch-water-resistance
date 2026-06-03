@@ -17,12 +17,16 @@ class Scope(QGroupBox):
         # 1. Setup scope graph (Left column, Top)
         self.graph = pg.PlotWidget(title="Scope")
         self.graph.showGrid(x=True, y=True, alpha=0.3)
+        self.graph.setLabel("left", "Voltage", units="V")
+        self.graph.setLabel("bottom", "Samples")
         self.curve = self.graph.plot(pen="y")
         left_layout.addWidget(self.graph)
 
         # 2. Setup absorbance graph (Left column, Bottom)
         self.abs_graph = pg.PlotWidget(title="Absorbance A(t)")
         self.abs_graph.showGrid(x=True, y=True, alpha=0.3)
+        self.abs_graph.setLabel("left", "Absorbance", units="a.u.")
+        self.abs_graph.setLabel("bottom", "Samples")
         self.abs_curve = self.abs_graph.plot(pen=pg.mkPen("#ff8c00", width=2))
         left_layout.addWidget(self.abs_graph)
 
