@@ -1,5 +1,4 @@
 # src/user_interface/actions.py
-import numpy as np
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QGroupBox,
