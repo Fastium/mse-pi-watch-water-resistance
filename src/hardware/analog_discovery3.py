@@ -14,8 +14,12 @@ SCOPE_INDEX = 0
 WAVEGEN_INDEX = 0
 
 
-# This class provide an interface to setup the analog discovery device
 class AD3:
+    """
+    Hardware driver wrapper for the Digilent Analog Discovery 3 device using dwfpy.
+    Handles configuration and control of the scope, wavegen, and digital IO components.
+    """
+
     def __init__(self):
         self.device = dwf.AnalogDiscovery3()
         self.wavegen = None
@@ -141,7 +145,7 @@ class AD3:
     def set_scope_buffer_size(self, buffer_size: int):
         self.scope_buffer_size = buffer_size
 
-    # --- Wavegen setters ---
+    # Wavegen setters
     def set_wavegen_function(self, function: str):
         self.wavegen_function = function
 
@@ -154,7 +158,7 @@ class AD3:
     def set_wavegen_offset(self, offset: float):
         self.wavegen_offset = offset
 
-    # --- Gain setters ---
+    # Gain setters
     def set_gain_a0(self, state: bool):
         self.gain_a0 = state
 

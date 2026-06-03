@@ -2,19 +2,13 @@ from application.config import AppConfig
 from hardware.analog_discovery3 import AD3
 from hardware.mock_analog_discovery3 import MockAD3
 
-# Constants
-
-MAX_FREQUENCE = 10e3
-MIN_FREQUENCE = 1
-
-MIN_OFFSET = -5
-MAX_OFFSET = 0
-
-MIN_AMPLITUDE = 0
-MAX_AMPLITUDE = 5
-
 
 class Controller:
+    """
+    Middleware layer that acts as an interface between the application logic and the hardware.
+    Instantiates the real or mock Analog Discovery 3 (AD3) based on configuration.
+    """
+
     def __init__(self):
 
         if AppConfig.simulation:
@@ -23,16 +17,19 @@ class Controller:
             self.ad3 = AD3()
 
     def connect(self):
+        """Opens the connection to the hardware device."""
         print("Connect")
         self.ad3.open()
 
     def setup(self):
+        """Configures the Digital I/O, Wavegen, and Scope on the hardware."""
         print("Setup")
         self.ad3.setup_io()
         self.ad3.setup_wavegen()
         self.ad3.setup_scope()
 
     def disconnect(self):
+        """Stops hardware components safely and closes the connection."""
         print("Close")
         self.ad3.stop_wavegen()
         self.ad3.close()
@@ -48,7 +45,7 @@ class Controller:
         print("Stop")
         self.ad3.stop_wavegen()
 
-    # --- Scope setters ---
+    # Scope setters
     def set_scope_range(self, range_val: float):
         self.ad3.set_scope_range(range_val)
 
@@ -70,7 +67,7 @@ class Controller:
     def set_scope_buffer_size(self, buffer_size: int):
         self.ad3.set_scope_buffer_size(buffer_size)
 
-    # --- Wavegen setters ---
+    # Wavegen setters
     def set_wavegen_function(self, function: str):
         self.ad3.set_wavegen_function(function)
         self.ad3.setup_wavegen()
@@ -91,7 +88,7 @@ class Controller:
         self.ad3.setup_wavegen()
         self.ad3.start_wavegens()
 
-    # --- Gain setters ---
+    # Gain setters
     def set_gain_a0(self, state: bool):
         self.ad3.set_gain_a0(state)
         self.ad3.setup_io()

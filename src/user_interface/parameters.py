@@ -15,7 +15,7 @@ from application.config import AppConfig
 
 
 class ParametersPanel(QWidget):
-    # --- Déclaration des Signaux ---
+    # Signal Declarations
     range_changed = Signal(float)
     bandwidth_changed = Signal(float)
     coupling_changed = Signal(str)
@@ -38,7 +38,7 @@ class ParametersPanel(QWidget):
 
         layout = QVBoxLayout()
 
-        # --- SCOPE PARAMETERS ---
+        # SCOPE PARAMETERS
         scope_group = QGroupBox("Scope Parameters")
         scope_layout = QFormLayout()
 
@@ -93,7 +93,7 @@ class ParametersPanel(QWidget):
         scope_group.setLayout(scope_layout)
         layout.addWidget(scope_group)
 
-        # --- WAVEGEN PARAMETERS ---
+        # WAVEGEN PARAMETERS
         wavegen_group = QGroupBox("Wavegen Parameters")
         wavegen_layout = QFormLayout()
 
@@ -126,7 +126,7 @@ class ParametersPanel(QWidget):
         wavegen_group.setLayout(wavegen_layout)
         layout.addWidget(wavegen_group)
 
-        # --- GAIN PARAMETERS ---
+        # GAIN PARAMETERS
         gain_group = QGroupBox("Gain IO Parameters")
         gain_layout = QVBoxLayout()
 

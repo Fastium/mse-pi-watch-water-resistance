@@ -10,13 +10,13 @@ from PySide6.QtWidgets import (
 
 
 class ActionsPanel(QGroupBox):
-    # --- Déclaration des Signaux ---
+    # Signal Declarations
     start_requested = Signal()
     stop_requested = Signal()
     single_start_requested = Signal()
     reset_plot_requested = Signal()
     export_requested = Signal()
-    export_abs_requested = Signal()  # <-- Nouveau signal pour Absorbance
+    export_abs_requested = Signal()
     export_ha_requested = Signal()
     calibration_requested = Signal()
     enable_trigger_requested = Signal()

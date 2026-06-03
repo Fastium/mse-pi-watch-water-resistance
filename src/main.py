@@ -1,13 +1,11 @@
 # src/main.py
 import sys
-import time
 from datetime import datetime
 
-import numpy as np
-from PySide6.QtCore import QCoreApplication, QObject, QThread, Signal, Slot
+from PySide6.QtCore import QThread
 from PySide6.QtWidgets import QApplication
 
-from analysis.humidity_runtime import load_calibration_model, predict_ha_from_signal
+from analysis.humidity_runtime import load_calibration_model
 from application.config import AppConfig
 from application.worker import AcquisitionWorker
 from middleware.controller import Controller
@@ -16,9 +14,13 @@ from utils.file_utils import export_csv_lines, export_txt
 
 
 def main():
+    """
+    Entry point of the application.
+    Initializes hardware controllers, UI, background workers, and connects signals to slots.
+    """
     app = QApplication(sys.argv)
 
-    # 1. Main components instantiation
+    # Main components instantiation
     config = AppConfig()
     controller = Controller()
 
@@ -26,7 +28,7 @@ def main():
     controller.connect()
     controller.setup()
 
-    # --- Thread and Worker Management ---
+    # Thread and Worker Management
     try:
         humidity_model = load_calibration_model()
         print(
@@ -37,7 +39,7 @@ def main():
         humidity_model = None
         print(f"[humidity-runtime] disabled: {exc}")
 
-    # Mise en place du Worker et du Thread
+    # Setup Worker and Thread
     worker = AcquisitionWorker(controller, humidity_model=humidity_model, config=config)
     thread = QThread()
     worker.moveToThread(thread)
@@ -45,17 +47,18 @@ def main():
     # Start the thread in the background once and for all.
     thread.start()
 
-    # 2. UI Instantiation
+    # UI Instantiation
     window = Window(config)
 
-    # --- Direct Wiring: UI -> Worker ---
+    # Direct Wiring: UI -> Worker
     window.actions_panel.start_requested.connect(worker.run_continuous)
     window.actions_panel.stop_requested.connect(worker.stop_working)
     window.actions_panel.single_start_requested.connect(worker.single_run)
     window.actions_panel.calibration_requested.connect(worker.on_calibration)
 
-    # -> Export wiring (custom function to get data from scope)
+    # Export wiring (custom function to get data from scope)
     def handle_export_scope():
+        """Export the current scope data to a text file."""
         data = window.scope.get_current_data()
         if data is not None:
             # Génération du nom de fichier horodaté
@@ -66,6 +69,7 @@ def main():
             print("No data to export yet.")
 
     def handle_export_abs():
+        """Fetches the current absorbance data and exports it to a text file with a timestamp."""
         data = window.scope.get_abs_current_data()
         if data is not None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -75,9 +79,10 @@ def main():
             print("No absorbance data to export yet.")
 
     def handle_export_ha():
+        """Fetches absolute humidity (HA) data and exports it to a CSV file with a timestamp."""
         data_lines = window.scope.get_ha_export_data()
         if data_lines:
-            # Génération du nom de fichier horodaté
+            # Generate timestamped filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"measure_{timestamp}_HA.txt"
 
@@ -90,7 +95,7 @@ def main():
     window.actions_panel.export_ha_requested.connect(handle_export_ha)
     window.actions_panel.export_abs_requested.connect(handle_export_abs)
 
-    # -> Scope Parameters Wiring
+    # Scope Parameters Wiring
     window.parameters.range_changed.connect(controller.set_scope_range)
     window.parameters.bandwidth_changed.connect(controller.set_scope_bandwidth)
     window.parameters.coupling_changed.connect(controller.set_scope_coupling)
@@ -101,7 +106,7 @@ def main():
     window.parameters.sample_rate_changed.connect(controller.set_scope_sample_rate)
     window.parameters.buffer_size_changed.connect(controller.set_scope_buffer_size)
 
-    # -> Wavegen Parameters Wiring
+    # Wavegen Parameters Wiring
     window.parameters.wavegen_function_changed.connect(controller.set_wavegen_function)
     window.parameters.wavegen_frequency_changed.connect(
         controller.set_wavegen_frequency
@@ -111,19 +116,19 @@ def main():
     )
     window.parameters.wavegen_offset_changed.connect(controller.set_wavegen_offset)
 
-    # -> Gain Parameters Wiring
+    # Gain Parameters Wiring
     window.parameters.gain_a0_changed.connect(controller.set_gain_a0)
     window.parameters.gain_a1_changed.connect(controller.set_gain_a1)
     window.parameters.gain_a2_changed.connect(controller.set_gain_a2)
 
-    # -> Data feedback (Worker -> UI)
+    # Data feedback (Worker -> UI)
     worker.data_ready.connect(window.scope.set_data)
 
     # Analysis feedback to Labels AND Graphs
     worker.analysis_ready.connect(window.actions_panel.set_analysis_labels)
     worker.analysis_ready.connect(window.scope.set_analysis)
 
-    # -> Real-time plot reset wiring
+    # Real-time plot reset wiring
     window.actions_panel.reset_plot_requested.connect(window.scope.reset_ha_plot)
 
     # Display
@@ -131,7 +136,7 @@ def main():
 
     # Disconnect the controller and thread when the application is closed
     def on_quit():
-        # Clean shutdown
+        """Cleanly shutdown threads and hardware connection before exiting."""
         worker.stop_working()
         thread.quit()
         thread.wait(500)

@@ -3,14 +3,18 @@ import time
 from datetime import datetime
 
 import numpy as np
-from PySide6.QtCore import QCoreApplication, QObject, QThread, Signal, Slot
-from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QCoreApplication, QObject, Signal, Slot
 
-from analysis.humidity_runtime import load_calibration_model, predict_ha_from_signal
+from analysis.humidity_runtime import predict_ha_from_signal
 from utils.file_utils import export_txt
 
 
 class AcquisitionWorker(QObject):
+    """
+    Worker class designed to run in a separate QThread.
+    Handles continuous data acquisition, single-run measurements, and calibration sequences.
+    """
+
     # Signal emitted when data is ready. Transmits X and Y arrays.
     data_ready = Signal(np.ndarray, np.ndarray)
     analysis_ready = Signal(dict)
@@ -49,7 +53,6 @@ class AcquisitionWorker(QObject):
             # Short pause to prevent 100% CPU usage
             time.sleep(0.01)
 
-            # CRITICAL FIX: Process events so the thread can receive the "stop_working" signal!
             QCoreApplication.processEvents()
 
         self.controller.stop()
@@ -58,6 +61,10 @@ class AcquisitionWorker(QObject):
         self._is_busy = False
 
     def _emit_measurement(self, data: np.ndarray):
+        """
+        Formats the raw scope data and emits it.
+        If a humidity model is loaded, it processes the data to estimate Absolute Humidity (HA).
+        """
         x_data = np.arange(len(data))
         self.data_ready.emit(x_data, data)
 
@@ -129,11 +136,11 @@ class AcquisitionWorker(QObject):
 
                 self._emit_measurement(data)
 
-                # 1. Generate timestamp (Format: YYYYMMDD_HHMMSS)
+                # Generate timestamp (Format: YYYYMMDD_HHMMSS)
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"{timestamp}_calibration_{i + 1}.txt"
 
-                # 2. Export the data
+                # Export the data
                 export_txt(data, self.config.calibration_output, filename)
 
             except RuntimeError:
